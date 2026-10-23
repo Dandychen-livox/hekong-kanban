@@ -22,5 +22,13 @@
     "item_id": null,
     "item_name": "Karson.chen",
     "detail": "邮箱:karson.chen@livoxtech.com；角色:管理员"
+  },
+  {
+    "time": "2026-10-23 01:26:23",
+    "operator": "Dandy.chen",
+    "action": "新增权限",
+    "item_id": null,
+    "item_name": "Kerwin.wang",
+    "detail": "邮箱:kerwin.wang@livoxtech.com；角色:责任人"
   }
 ]
