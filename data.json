@@ -4,7 +4,7 @@
     "date": "2026-07-21",
     "item": "Avia2+Mid360L用户声音反馈",
     "submit": "在线文档：https://www.kdocs.cn/l/cl9NhBdHhMLTT\n收集方式：第一次反馈7月2日\n后续在线填写，每个月31日，发邮件反馈\n收件人：dandy\n抄送：周培云/jesscia/wei.ma",
-    "ddl": "每月31日",
+    "ddl": "",
     "person": "孟勇",
     "livox": "Dandy",
     "progress": "完成/每月更新",
@@ -12,7 +12,15 @@
     "status": "完成",
     "livox_confirm": "完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "2026-10-23 08:47",
+    "status_done_at": "2026-10-23 08:47",
+    "recurring": true,
+    "recur_note": "每月31日",
+    "initiator": "",
+    "recur_type": "每月",
+    "recur_value": "31"
   },
   {
     "id": 2,
@@ -27,7 +35,15 @@
     "status": "完成",
     "livox_confirm": "完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "2026-10-23 08:47",
+    "status_done_at": "2026-10-23 08:47",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   },
   {
     "id": 3,
@@ -42,7 +58,15 @@
     "status": "未完成",
     "livox_confirm": "未完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "",
+    "status_done_at": "",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   },
   {
     "id": 4,
@@ -57,14 +81,22 @@
     "status": "未完成",
     "livox_confirm": "未完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "",
+    "status_done_at": "",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   },
   {
     "id": 5,
     "date": "2026-07-28",
     "item": "要是Mid360L用户声音再次收集反馈，主要是Mid360L推广中产生的疑问（包含产品本身问题/应用场景问题/业务问题等）",
     "submit": "用户声音反馈链接：https://www.kdocs.cn/l/cl9NhBdHhMLT",
-    "ddl": "7月30日前",
+    "ddl": "2026-07-30",
     "person": "孟勇",
     "livox": "Dandy",
     "progress": "",
@@ -72,7 +104,15 @@
     "status": "未完成",
     "livox_confirm": "未完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "",
+    "status_done_at": "",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   },
   {
     "id": 6,
@@ -87,7 +127,15 @@
     "status": "完成",
     "livox_confirm": "完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "2026-10-23 08:47",
+    "status_done_at": "2026-10-23 08:47",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   },
   {
     "id": 7,
@@ -102,7 +150,15 @@
     "status": "未完成",
     "livox_confirm": "未完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "",
+    "status_done_at": "",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   },
   {
     "id": 8,
@@ -117,6 +173,14 @@
     "status": "未完成",
     "livox_confirm": "未完成",
     "updated_at": "",
-    "updated_by": ""
+    "updated_by": "",
+    "priority": "中",
+    "completed_at": "",
+    "status_done_at": "",
+    "recurring": false,
+    "recur_note": "",
+    "initiator": "",
+    "recur_type": "",
+    "recur_value": ""
   }
 ]

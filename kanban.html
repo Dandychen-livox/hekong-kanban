@@ -2,1075 +2,1348 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>待办看板 — 和控代理事项闭环追踪</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>和控代理事项闭环看板</title>
+<!-- build: 2026-08-04 17:32:35 -->
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;min-width:1100px;font-size:13px;}
-
-/* ── Header ── */
-.header{background:linear-gradient(135deg,#1a4fa0,#0d3270);color:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:46px;}
-.header-left{display:flex;align-items:center;gap:14px;}
-.header-title{font-size:16px;font-weight:700;letter-spacing:1px;}
-.header-user{background:rgba(255,255,255,.18);border-radius:14px;padding:3px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;}
-.header-user:hover{background:rgba(255,255,255,.28);}
-.header-right{display:flex;align-items:center;gap:10px;font-size:12px;}
-.last-update{opacity:.8;}
-.admin-tools{display:none;align-items:center;gap:8px;}
-
-/* ── Sub-header (date bar) ── */
-.datebar{background:#1e3d7a;color:#a8c4f0;padding:5px 20px;font-size:12px;display:flex;align-items:center;gap:18px;}
-.datebar span{white-space:nowrap;}
-.datebar .countdown{color:#fff;font-weight:600;}
-.datebar .next-red{color:#ff6b6b;font-weight:600;}
-
-/* ── Section box ── */
-.section{margin:12px 16px 0;}
-.section-title{background:#1a4fa0;color:#fff;padding:7px 14px;font-size:13px;font-weight:600;border-radius:4px 4px 0 0;display:flex;align-items:center;gap:6px;}
-.section-title::before{content:"▌";font-size:10px;opacity:.7;}
-
-/* ── Summary table (single row) ── */
-.summary-table{width:100%;border-collapse:collapse;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1);}
-.summary-table th{background:#1a4fa0;color:#fff;padding:8px 10px;text-align:center;font-weight:600;font-size:12px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.15);}
-.summary-table th:first-child{text-align:left;width:100px;}
-.summary-table td{padding:9px 10px;text-align:center;border-right:1px solid #eee;border-bottom:1px solid #eee;font-size:13px;font-weight:600;}
-.summary-table td:first-child{text-align:left;color:#333;font-weight:500;}
-/* sub-header row for DDL status */
-.summary-table .sub-th{background:#1a4fa0;color:#fff;text-align:center;font-size:11px;padding:5px 8px;border-right:1px solid rgba(255,255,255,.15);}
-.summary-table .sub-th.green-dot::before{content:"✓ ";color:#6ee86e;}
-.summary-table .sub-th.orange-dot::before{content:"● ";color:#ffa040;}
-.summary-table .sub-th.red-dot::before{content:"● ";color:#ff6060;}
-.num-blue{color:#1a73e8;font-weight:700;}
-.num-green{color:#22a350;font-weight:700;}
-.num-gray{color:#999;}
-.num-red{color:#e53935;font-weight:700;}
-.num-orange{color:#f57c00;font-weight:700;}
-
-/* ── Person table ── */
-.person-table-wrap{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1);}
-.person-table{width:100%;border-collapse:collapse;}
-.person-table th{background:#1a4fa0;color:#fff;padding:8px 10px;text-align:center;font-weight:600;font-size:12px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.15);}
-.person-table th.left{text-align:left;}
-.person-table .sub-th2{background:#1a4fa0;color:#fff;text-align:center;font-size:11px;padding:5px 8px;border-right:1px solid rgba(255,255,255,.15);}
-.person-table .sub-th2.green-dot::before{content:"✓ ";color:#6ee86e;}
-.person-table .sub-th2.orange-dot::before{content:"● ";color:#ffa040;}
-.person-table .sub-th2.red-dot::before{content:"● ";color:#ff6060;}
-.person-table td{padding:7px 10px;text-align:center;border-bottom:1px solid #f0f0f0;border-right:1px solid #f5f5f5;font-size:13px;}
-.person-table td.name-cell{text-align:left;font-weight:500;}
-.person-table tr:last-child td{border-bottom:none;background:#f0f4ff;font-weight:700;}
-.person-table tr:hover:not(:last-child) td{background:#f8fbff;}
-.overdue-name{color:#e53935!important;font-weight:700!important;}
-
-/* ── Filter tabs ── */
-.filter-bar{display:flex;align-items:center;gap:0;margin:14px 16px 0;background:#fff;border-radius:6px;padding:8px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-wrap:wrap;gap:8px;}
-.filter-label{font-size:13px;color:#666;margin-right:4px;}
-.tab-btn{padding:5px 16px;border:1px solid #ddd;background:#fff;border-radius:16px;cursor:pointer;font-size:13px;color:#555;display:inline-flex;align-items:center;gap:4px;transition:.15s;}
-.tab-btn:hover{border-color:#1a73e8;color:#1a73e8;}
-.tab-btn.active{background:#1a4fa0;color:#fff;border-color:#1a4fa0;}
-.tab-btn .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
-.dot-green{background:#34a853;}
-.dot-red{background:#ea4335;}
-.tab-btn.active .dot-green,.tab-btn.active .dot-red{background:#fff;}
-.filter-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.filter-select{padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;color:#555;}
-.search-input{padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;width:150px;}
-
-/* ── Items table ── */
-.items-section{margin:10px 16px 20px;}
-.items-table-wrap{background:#fff;border-radius:0 0 6px 6px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden;}
-.items-table{width:100%;border-collapse:collapse;}
-.items-table th{background:#1a4fa0;color:#fff;padding:9px 10px;text-align:center;font-weight:600;font-size:12px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.15);}
-.items-table th:nth-child(2){text-align:left;}
-.items-table th:nth-child(3){text-align:left;}
-.items-table td{padding:8px 10px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f8f8f8;vertical-align:top;font-size:12px;}
-.items-table tr:hover td{background:#f5f8ff;}
-.items-table tr:last-child td{border-bottom:none;}
-.td-id{text-align:center;color:#999;width:40px;}
-.td-item{min-width:140px;max-width:200px;word-break:break-all;line-height:1.5;font-size:13px;font-weight:500;color:#1a2e5a;}
-.td-submit{max-width:220px;word-break:break-all;line-height:1.5;white-space:pre-wrap;color:#555;font-size:12px;}
-.td-ddl{text-align:center;white-space:nowrap;font-size:12px;}
-.td-center{text-align:center;}
-.td-progress{max-width:220px;word-break:break-all;line-height:1.5;white-space:pre-wrap;color:#444;font-size:12px;}
-
-/* DDL colors */
-.ddl-overdue{color:#e53935;font-weight:700;}
-.ddl-near{color:#f57c00;font-weight:700;}
-.ddl-periodic{color:#1a73e8;}
-.ddl-done{color:#22a350;}
-
-/* Status badges */
-.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;}
-.badge-done{background:#e6f4ea;color:#1a7a34;}
-.badge-pending{background:#fce8e6;color:#c62828;}
-.badge-suspended{background:#fff3e0;color:#e65100;}
-.tag-overdue{background:#fce8e6;color:#c62828;border:1px solid #f5c2c0;padding:1px 5px;border-radius:3px;font-size:10px;margin-right:3px;}
-
-/* Submit URL */
-.submit-link{color:#1a73e8;text-decoration:none;font-size:12px;}
-.submit-link:hover{text-decoration:underline;}
-
-/* Action buttons */
-.actions{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap;}
-.btn{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid #ddd;border-radius:14px;cursor:pointer;font-size:12px;font-weight:500;background:#fff;color:#555;transition:.15s;white-space:nowrap;}
-.btn:hover{border-color:#1a73e8;color:#1a73e8;background:#f0f4ff;}
-.btn-fill{border-color:#1a4fa0;color:#1a4fa0;}
-.btn-fill:hover{background:#1a4fa0;color:#fff;}
-.btn-edit{border-color:#34a853;color:#34a853;}
-.btn-edit:hover{background:#34a853;color:#fff;}
-.btn-del{border-color:#e53935;color:#e53935;}
-.btn-del:hover{background:#e53935;color:#fff;}
-
-/* count badge */
-.count-info{font-size:12px;color:#888;}
-
-/* ── Modals ── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
-.overlay.show{display:flex;}
-.modal{background:#fff;border-radius:10px;padding:24px 28px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);}
-.modal h2{font-size:16px;font-weight:700;margin-bottom:18px;color:#1a2e5a;padding-bottom:10px;border-bottom:2px solid #e8ecf5;}
-.form-row{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap;}
-.form-group{flex:1;min-width:180px;}
-.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#555;}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#333;font-family:inherit;}
-.form-group textarea{resize:vertical;min-height:65px;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.1);}
-.modal-footer{margin-top:18px;display:flex;justify-content:flex-end;gap:8px;}
-.modal-btn{padding:7px 20px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;}
-.modal-btn-primary{background:#1a4fa0;color:#fff;border-color:#1a4fa0;}
-.modal-btn-primary:hover{background:#153f87;}
-.modal-btn-cancel{background:#fff;color:#555;}
-.modal-btn-cancel:hover{background:#f5f5f5;}
-.login-modal{width:360px;}
-.tab-bar{display:flex;border-bottom:2px solid #eee;margin-bottom:16px;}
-.tab{padding:7px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;}
-.tab.active{color:#1a4fa0;border-bottom-color:#1a4fa0;}
-.err-msg{color:#e53935;font-size:12px;margin-bottom:8px;}
-.log-modal{width:760px;}
-.log-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
-.log-table th{background:#f5f6fa;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid #eee;}
-.log-table td{padding:6px 10px;border-bottom:1px solid #f5f5f5;vertical-align:top;}
-.upload-area{border:2px dashed #ccc;border-radius:8px;padding:22px;text-align:center;color:#aaa;cursor:pointer;transition:.2s;font-size:13px;}
-.upload-area:hover,.upload-area.drag{border-color:#1a73e8;color:#1a73e8;background:#f0f4ff;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#dce3ef;color:#111;font-size:13px;min-height:100vh}
+/* 登录 */
+#login{position:fixed;inset:0;background:rgba(5,15,50,.82);display:flex;align-items:center;justify-content:center;z-index:999}
+.lbox{background:#fff;border-radius:14px;padding:36px 42px;width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.35)}
+.lbox h2{color:#1a3a8f;font-size:18px;margin-bottom:4px}
+.lbox p{color:#999;font-size:12px;margin-bottom:16px}
+.skip-btn{background:none;border:none;color:#aaa;cursor:pointer;font-size:12px;font-family:inherit;float:right;margin-bottom:8px}
+.tabs{display:flex;border:1.5px solid #c5cae9;border-radius:8px;overflow:hidden;margin-bottom:18px;clear:both}
+.tab{flex:1;padding:8px;border:none;background:#fff;color:#666;cursor:pointer;font-size:13px;font-family:inherit;transition:.2s}
+.tab.on{background:#1a3a8f;color:#fff;font-weight:700}
+.linput{width:100%;padding:10px 12px;border:1.5px solid #c5cae9;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:8px;outline:none}
+.linput:focus{border-color:#1a3a8f}
+.lhint{font-size:11px;color:#bbb;text-align:left;margin-bottom:12px}
+.lbtn{width:100%;padding:11px;background:#1a3a8f;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.lbtn:hover{background:#122a6e}
+.lerr{color:#c62828;font-size:12px;margin-top:8px;min-height:16px}
+/* 主体 */
+#app{min-height:100vh}
+/* 顶栏 */
+.hdr{background:linear-gradient(90deg,#06113a,#1a3a8f);padding:12px 22px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.hdr-title{color:#fff;font-size:16px;font-weight:700}
+.badge{padding:2px 11px;border-radius:20px;font-size:12px;font-weight:700}
+.b-admin{background:#ffd54f;color:#3e2700}
+.b-person{background:#a5d6a7;color:#1b5e20}
+.b-guest{background:#546e7a;color:#fff}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.hdr-time{color:rgba(255,255,255,.65);font-size:12px}
+.lout{padding:4px 12px;border:1.5px solid rgba(255,255,255,.35);border-radius:14px;background:transparent;color:#fff;cursor:pointer;font-size:12px;font-family:inherit}
+.lout:hover{background:rgba(255,255,255,.15)}
+.btn-log{padding:4px 12px;border:1.5px solid rgba(255,255,255,.5);border-radius:14px;background:transparent;color:#fff;cursor:pointer;font-size:12px;font-family:inherit}
+.btn-log:hover{background:rgba(255,255,255,.15)}
+/* 状态栏 */
+.sbar{background:#1a3a8f;padding:6px 22px;display:flex;align-items:center;gap:20px;font-size:12px;color:rgba(255,255,255,.75)}
+.sbar strong{color:#fff}
+.sbar-r{margin-left:auto;color:rgba(255,255,255,.65)}
+.sbar-r strong{color:#ffd54f}
+/* 区块 */
+.blk{margin:14px 18px 0;border-radius:5px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.blk-hdr{background:#1a3a8f;padding:9px 15px}
+.blk-hdr span{color:#fff;font-size:13px;font-weight:700}
+/* 表格 */
+table{width:100%;border-collapse:collapse;background:#fff}
+thead tr{background:#1e4a9a}
+th{color:#fff;padding:9px 11px;text-align:center;font-size:12px;font-weight:600;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
+th.tl{text-align:left}
+.th-exp{background:#1e4a9a}
+tbody tr{border-bottom:1px solid #e5eaf5}
+tbody tr:hover{background:#f2f5ff}
+td{padding:9px 11px;font-size:13px;color:#222;border-right:1px solid #e5eaf5;text-align:center;vertical-align:middle}
+td.tl{text-align:left;font-weight:600}
+tr.sum td{background:#edf1fb;font-weight:700;border-top:2px solid #1a3a8f}
+tr.tot td{background:#d9e2f4;font-weight:700;border-top:2px solid #1a3a8f}
+.red{color:#d32f2f;font-weight:700}
+.dg{width:13px;height:13px;background:#2e7d32;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:9px}
+.do{width:11px;height:11px;background:#ef6c00;border-radius:50%;display:inline-block}
+.dr{width:11px;height:11px;background:#c62828;border-radius:50%;display:inline-block}
+.th-dot{display:inline-flex;align-items:center;gap:3px}
+/* 工具栏 */
+.tbar{padding:12px 18px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fb{padding:5px 15px;border-radius:15px;border:1.5px solid #b0bcd8;background:#fff;cursor:pointer;font-size:12px;color:#555;font-family:inherit}
+.fb:hover{border-color:#1a3a8f;color:#1a3a8f}
+.fb.on{background:#1a3a8f;color:#fff;border-color:#1a3a8f;font-weight:700}
+.badd{padding:6px 14px;background:#2e7d32;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;margin-left:auto}
+.badd:hover{background:#1b5e20}
+.btpl{padding:6px 14px;background:#1565c0;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;margin-left:4px}
+.btpl:hover{background:#0d47a1}
+.bbatch{padding:6px 14px;background:#6a1b9a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;margin-left:4px}
+.bbatch:hover{background:#4a148c}
+.bexport{padding:6px 14px;background:#2e7d32;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;margin-left:4px}
+.bexport:hover{background:#1b5e20}
+/* 明细表 */
+.dtbl{margin:0 18px 28px;border-radius:5px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.dtbl-hdr{background:#1a3a8f;padding:9px 15px}
+.dtbl-hdr span{color:#fff;font-size:13px;font-weight:700}
+.dtbl-hdr2{background:#00838f;padding:9px 15px}
+.dtbl-hdr2 span{color:#fff;font-size:13px;font-weight:700}
+.dt.recur thead th{background:#00acc1}
+.dt.recur tr:nth-child(even) td{background:#e0f7fa}
+.dt.recur tr:hover td{background:#d4f2f5}
+.rc{display:inline-block;background:#e0f2f1;color:#00695c;border-radius:9px;padding:2px 8px;font-size:12px;white-space:nowrap}
+.dt thead th{background:#1e4a9a;color:#fff;padding:9px 11px;text-align:left;font-size:12px;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap}
+.dt td{text-align:left;padding:9px 11px;border-right:1px solid #e5eaf5;border-bottom:1px solid #e5eaf5;font-size:12.5px;vertical-align:top}
+.dt tr:nth-child(even) td{background:#f6f8ff}
+.dt tr:hover td{background:#edf0ff}
+.dt tr.hidden{display:none}
+.iname{font-weight:700;color:#1a237e;line-height:1.5}
+.stxt{white-space:pre-line;font-size:12px;color:#555;line-height:1.6}
+.stxt a{color:#1565c0;text-decoration:none}
+.ptxt{white-space:pre-line;font-size:12px;color:#444;line-height:1.6}
+.umeta{font-size:11px;color:#bbb;margin-top:3px}
+.dc{display:inline-block;background:#e3f2fd;color:#0d47a1;border-radius:9px;padding:2px 8px;font-size:12px;white-space:nowrap}
+.dn{display:inline-block;background:#e8f5e9;color:#1b5e20;border-radius:9px;padding:2px 8px;font-size:12px;white-space:nowrap}
+.ds{display:inline-block;background:#fff3e0;color:#bf360c;border-radius:9px;padding:2px 8px;font-size:12px;font-weight:700;white-space:nowrap}
+.dv{display:inline-block;background:#ffebee;color:#b71c1c;border-radius:9px;padding:2px 8px;font-size:12px;font-weight:700;white-space:nowrap}
+.pc{display:inline-block;background:#ede7f6;color:#4527a0;border-radius:18px;padding:2px 8px;font-size:12px;font-weight:600;margin:1px;white-space:nowrap}
+.pc.me{background:#fff9c4;color:#4a3700}
+.sdone{display:inline-flex;align-items:center;gap:3px;background:#e8f5e9;color:#2e7d32;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.sund{display:inline-flex;align-items:center;gap:3px;background:#ffebee;color:#c62828;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.shold{display:inline-flex;align-items:center;gap:3px;background:#fff8e1;color:#f57f17;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.pri-high{display:inline-flex;align-items:center;gap:3px;background:#ffebee;color:#c62828;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.pri-mid{display:inline-flex;align-items:center;gap:3px;background:#fff3e0;color:#e65100;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.pri-low{display:inline-flex;align-items:center;gap:3px;background:#eceff1;color:#546e7a;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.btn-set{padding:4px 12px;border:1.5px solid rgba(255,255,255,.5);border-radius:14px;background:transparent;color:#fff;cursor:pointer;font-size:12px;font-family:inherit}
+.btn-set:hover{background:rgba(255,255,255,.15)}
+.btn-set.on{background:#ffd54f;color:#3e2700;border-color:#ffd54f;font-weight:700}
+.be{padding:3px 10px;border-radius:5px;border:1.5px solid #1a3a8f;background:#fff;color:#1a3a8f;cursor:pointer;font-size:12px;font-family:inherit;white-space:nowrap}
+.be:hover{background:#1a3a8f;color:#fff}
+.bd{padding:3px 8px;border-radius:5px;border:1.5px solid #c62828;background:#fff;color:#c62828;cursor:pointer;font-size:12px;font-family:inherit;margin-left:3px}
+.bd:hover{background:#c62828;color:#fff}
+.bpub{padding:3px 10px;border-radius:5px;border:1.5px solid #2e7d32;background:#fff;color:#2e7d32;cursor:pointer;font-size:12px;font-family:inherit;white-space:nowrap}
+.bpub:hover{background:#2e7d32;color:#fff}
+/* Modal */
+.mbg{position:fixed;inset:0;background:rgba(5,15,50,.6);display:none;align-items:center;justify-content:center;z-index:1000}
+.mbg.show{display:flex}
+.mbox{background:#fff;border-radius:12px;padding:26px 30px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 6px 30px rgba(0,0,0,.25)}
+.mbox h3{color:#1a3a8f;font-size:15px;margin-bottom:16px}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:12px;color:#666;font-weight:700;margin-bottom:4px}
+.fg input,.fg textarea,.fg select{width:100%;padding:8px 11px;border:1.5px solid #c5cae9;border-radius:7px;font-size:13px;font-family:inherit;outline:none;resize:vertical}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:#1a3a8f}
+.frow{display:flex;gap:11px}
+.frow .fg{flex:1}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.bsave{padding:8px 20px;background:#1a3a8f;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.bsave:hover{background:#122a6e}
+.bcancel{padding:8px 16px;background:#fff;color:#555;border:1.5px solid #c5cae9;border-radius:7px;font-size:13px;cursor:pointer;font-family:inherit}
+.bcancel:hover{border-color:#888}
+/* 批量上传 */
+.upload-zone{border:2px dashed #c5cae9;border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:14px}
+.upload-zone:hover,.upload-zone.drag{border-color:#1a3a8f;background:#f0f4ff}
+.uz-icon{font-size:32px;margin-bottom:6px}
+.uz-text{font-size:13px;color:#555}
+.uz-hint{font-size:11px;color:#aaa;margin-top:4px}
+.preview-scroll{max-height:220px;overflow-y:auto;border:1px solid #e0e4f0;border-radius:6px;margin-top:8px}
+.ptable{width:100%;border-collapse:collapse;font-size:12px}
+.ptable th{background:#1e4a9a;color:#fff;padding:6px 10px;text-align:left;white-space:nowrap}
+.ptable td{padding:6px 10px;border-bottom:1px solid #eee}
+.ptable tr:nth-child(even) td{background:#f8f9ff}
+.ures{padding:10px 14px;border-radius:7px;font-size:13px;margin-top:10px}
+.ures.ok{background:#e8f5e9;color:#2e7d32}
+.ures.err{background:#ffebee;color:#c62828}
+/* 日志 */
+.log-modal{position:fixed;inset:0;background:rgba(5,15,50,.65);display:none;align-items:center;justify-content:center;z-index:2000}
+.log-modal.show{display:flex}
+.log-box{background:#fff;border-radius:12px;width:800px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 6px 30px rgba(0,0,0,.28)}
+.log-hdr{background:#1a3a8f;color:#fff;padding:12px 18px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:10px}
+.log-hdr span{font-size:15px;font-weight:700;flex:1}
+.log-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 6px}
+.log-filter{padding:10px 16px;border-bottom:1px solid #eee;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.log-filter input,.log-filter select{padding:5px 10px;border:1.5px solid #c5cae9;border-radius:6px;font-size:12px;font-family:inherit;outline:none}
+.log-filter input:focus,.log-filter select:focus{border-color:#1a3a8f}
+.log-filter input{width:160px}
+.log-body{overflow-y:auto;flex:1}
+.ltable{width:100%;border-collapse:collapse}
+.ltable th{background:#f0f4ff;color:#333;padding:8px 12px;text-align:left;font-size:12px;font-weight:700;border-bottom:2px solid #dde3f0;white-space:nowrap;position:sticky;top:0}
+.ltable td{padding:8px 12px;font-size:12px;color:#333;border-bottom:1px solid #eef0f7;vertical-align:top}
+.ltable tr:hover td{background:#f5f7ff}
+.la-pub{display:inline-block;background:#e8f5e9;color:#2e7d32;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700}
+.la-edit{display:inline-block;background:#e3f2fd;color:#0d47a1;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700}
+.la-add{display:inline-block;background:#fff8e1;color:#f57f17;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700}
+.la-del{display:inline-block;background:#ffebee;color:#c62828;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700}
+.la-login{display:inline-block;background:#ede7f6;color:#4527a0;border-radius:8px;padding:1px 7px;font-size:11px;font-weight:700}
+.log-empty{padding:40px;text-align:center;color:#bbb;font-size:13px}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:#1a3a8f;color:#fff;padding:10px 20px;border-radius:9px;font-size:13px;box-shadow:0 3px 14px rgba(0,0,0,.2);transform:translateY(60px);opacity:0;transition:.3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:#2e7d32}
+.toast.err{background:#c62828}
+.note{margin:0 18px 26px;padding:7px 13px;background:#fffde7;border-left:4px solid #f9a825;border-radius:0 4px 4px 0;font-size:12px;color:#555;line-height:1.9}
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="header-left">
-    <div class="header-title">待办看板 — 和控代理事项闭环追踪</div>
-    <div class="header-user" id="userBadge" onclick="openLoginModal()">
-      <span id="userLabel">dandy.chen</span> ▾
+<!-- 登录 -->
+<div id="login">
+  <div class="lbox">
+    <h2>和控代理事项闭环看板</h2>
+    <p>为保密管理，仅授权邮箱可登录查看</p>
+    <input id="ilemail" class="linput" type="email" placeholder="请输入您的授权邮箱" autocomplete="email">
+    <input id="ilpw" class="linput" type="password" placeholder="管理员密码" style="display:none">
+    <div class="lhint" id="lhint">未在名单中的邮箱无法登录，如需开通请联系管理员</div>
+    <button class="lbtn" onclick="loginStep()">登录看板</button>
+    <div class="lerr" id="lerr"></div>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-title">【待办看板】— 和控代理事项闭环追踪</div>
+    <span class="badge b-guest" id="rbadge">游客</span>
+    <div class="hdr-r">
+      <span class="hdr-time">最近更新：<strong id="lupd">—</strong></span>
+      <button class="btn-set" id="btn-toggle-old" onclick="toggleOldDone()">⚙ 显示全部已完成</button>
+      <button class="btn-log" id="btn-perm" onclick="openPerm()" style="display:none">👥 权限管理</button>
+      <button class="btn-log" id="btn-log" onclick="openLog()" style="display:none">📋 操作日志</button>
+      <button class="lout" id="login-btn" onclick="showLogin()">登录</button>
     </div>
   </div>
-  <div class="header-right">
-    <span class="last-update">最近更新：<span id="lastUpdate">—</span></span>
-    <span id="adminTools" class="admin-tools">
-      <button class="btn btn-fill" onclick="openLogModal()" style="border-radius:6px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff;font-size:12px;">📋 操作日志</button>
-      <button class="btn btn-fill" onclick="openAddModal()" style="border-radius:6px;background:#2ecc71;border-color:#2ecc71;color:#fff;font-size:12px;">＋ 新增事项</button>
-      <button class="btn" onclick="downloadTemplate()" style="border-radius:6px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff;font-size:12px;">⬇ 下载模板</button>
-      <button class="btn" onclick="openBatchModal()" style="border-radius:6px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff;font-size:12px;">⬆ 批量上传</button>
-    </span>
+  <div class="sbar">
+    <span>今日：<strong id="today">—</strong></span>
+    <span>距下次更新：<strong id="cd">—</strong></span>
+    <span class="sbar-r">下次更新：<strong id="nupd">—</strong></span>
   </div>
-</div>
 
-<!-- Date bar -->
-<div class="datebar">
-  <span>今日：<strong id="todayStr" style="color:#fff;"></strong></span>
-  <span>距下次更新：<span class="countdown" id="countdownStr">—</span></span>
-  <span style="margin-left:auto;">下次更新：<span class="next-red" id="nextUpdateStr">—</span></span>
-</div>
-
-<!-- 待办闭环汇总 -->
-<div class="section">
-  <div class="section-title">待办闭环汇总</div>
-  <div style="overflow-x:auto;">
-    <table class="summary-table">
+  <!-- 汇总 -->
+  <div class="blk">
+    <div class="blk-hdr"><span>📋 待办闭环汇总</span></div>
+    <table>
       <thead>
         <tr>
-          <th rowspan="2" style="width:90px;">事项</th>
-          <th rowspan="2">待办总数</th>
-          <th rowspan="2">点状待办</th>
-          <th rowspan="2">重点事项</th>
-          <th rowspan="2">已完成</th>
-          <th rowspan="2">挂起</th>
-          <th rowspan="2">关闭</th>
-          <th rowspan="2">进行中</th>
-          <th colspan="3" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.2);">进行中待办的到期状态</th>
+          <th class="tl" rowspan="2">事项</th>
+          <th rowspan="2">待办总数</th><th rowspan="2">重复性待办</th><th rowspan="2">待办事项</th>
+          <th rowspan="2">已完成</th><th rowspan="2">挂起</th><th rowspan="2">关闭</th><th rowspan="2">进行中</th>
+          <th colspan="3" class="th-exp">进行中待办的到期状态</th>
         </tr>
         <tr>
-          <th class="sub-th green-dot">正常</th>
-          <th class="sub-th orange-dot">临期</th>
-          <th class="sub-th red-dot">逾期</th>
+          <th class="th-exp"><span class="th-dot"><span class="dg">✓</span>正常</span></th>
+          <th class="th-exp"><span class="th-dot"><span class="do"></span>临期</span></th>
+          <th class="th-exp"><span class="th-dot"><span class="dr"></span>逾期</span></th>
         </tr>
       </thead>
-      <tbody id="summaryBody"></tbody>
+      <tbody>
+        <tr class="sum">
+          <td class="tl">待办闭环汇总</td>
+          <td id="s0">—</td><td id="s1">—</td><td id="s2">—</td><td id="s3">—</td>
+          <td id="s4">—</td><td>0</td><td class="red" id="s6">—</td>
+          <td id="s7">—</td><td id="s8">—</td><td id="s9">—</td>
+        </tr>
+      </tbody>
     </table>
+  </div>
+
+  <!-- 按责任人 -->
+  <div class="blk" style="margin-top:12px">
+    <div class="blk-hdr"><span>👤 按责任人统计</span></div>
+    <table>
+      <thead>
+        <tr>
+          <th class="tl" rowspan="2">责任人</th>
+          <th rowspan="2">待办总数</th><th rowspan="2">重复性待办</th><th rowspan="2">待办事项</th>
+          <th rowspan="2">已完成</th><th rowspan="2">挂起</th><th rowspan="2">关闭</th><th rowspan="2">进行中</th>
+          <th colspan="3" class="th-exp">进行中待办的到期状态</th>
+        </tr>
+        <tr>
+          <th class="th-exp"><span class="th-dot"><span class="dg">✓</span>正常</span></th>
+          <th class="th-exp"><span class="th-dot"><span class="do"></span>临期</span></th>
+          <th class="th-exp"><span class="th-dot"><span class="dr"></span>逾期</span></th>
+        </tr>
+      </thead>
+      <tbody id="ptbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 筛选 -->
+  <div class="tbar">
+    <span style="font-size:12px;color:#555;font-weight:600">筛选：</span>
+    <button class="fb on" onclick="setF('all',this)">全部</button>
+    <button class="fb" onclick="setF('done',this)">✅ 已完成</button>
+    <button class="fb" onclick="setF('undone',this)">🔴 未完成</button>
+    <button class="fb" id="bmine" onclick="setF('mine',this)" style="display:none">👤 我的事项</button>
+    <button class="badd" id="badd" onclick="openAdd()" style="display:none">＋ 新增事项</button>
+    <button class="btpl" id="btpl" onclick="downloadTemplate()" style="display:none">⬇ 下载模板</button>
+    <button class="bbatch" id="bbatch" onclick="openBatch()" style="display:none">⬆ 批量上传</button>
+    <button class="bexport" id="bexport" onclick="downloadExport()" style="display:none">⬇ 备份下载(Excel)</button>
+  </div>
+
+  <!-- 待办明细 -->
+  <div class="dtbl">
+    <div class="dtbl-hdr"><span>📄 待办事项明细</span> <span id="hide-hint" style="font-size:11px;color:#c5cfe8;font-weight:400;margin-left:10px"></span></div>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th style="width:38px;text-align:center">序号</th>
+          <th style="min-width:140px">事项</th>
+          <th style="width:64px;text-align:center">优先级</th>
+          <th style="min-width:200px">提交内容／要求</th>
+          <th style="width:105px;text-align:center">DDL</th>
+          <th style="width:95px;text-align:center">责任人</th>
+          <th style="width:88px;text-align:center">发起人</th>
+          <th style="min-width:180px">进展</th>
+          <th style="width:120px">提交物</th>
+          <th style="width:86px;text-align:center">闭环状态</th>
+          <th style="width:90px;text-align:center">Livox确认</th>
+          <th style="width:130px;text-align:center">操作</th>
+        </tr>
+      </thead>
+      <tbody id="dtbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 重复性待办明细 -->
+  <div class="dtbl">
+    <div class="dtbl-hdr2"><span>🔁 重复性待办明细</span> <span id="hide-hint2" style="font-size:11px;color:#c9f4f8;font-weight:400;margin-left:10px"></span></div>
+    <table class="dt recur">
+      <thead>
+        <tr>
+          <th style="width:38px;text-align:center">序号</th>
+          <th style="min-width:140px">事项</th>
+          <th style="width:64px;text-align:center">优先级</th>
+          <th style="width:110px">周期说明</th>
+          <th style="min-width:180px">提交内容／要求</th>
+          <th style="width:105px;text-align:center">DDL（下次到期）</th>
+          <th style="width:95px;text-align:center">责任人</th>
+          <th style="width:88px;text-align:center">发起人</th>
+          <th style="min-width:160px">进展</th>
+          <th style="width:110px">提交物</th>
+          <th style="width:86px;text-align:center">闭环状态</th>
+          <th style="width:90px;text-align:center">Livox确认</th>
+          <th style="width:130px;text-align:center">操作</th>
+        </tr>
+      </thead>
+      <tbody id="rdtbody"></tbody>
+    </table>
+  </div>
+  <div class="note">【说明】<strong>待办事项</strong>：一次性事项，设置明确DDL ｜ <strong>重复性待办</strong>：按周期重复的事项，同样设置DDL（表示下一次到期时间） ｜ <strong>临期</strong>：距DDL≤3天 ｜ <strong>逾期</strong>：已超过DDL未完成</div>
+</div>
+
+<!-- 编辑Modal -->
+<div class="mbg" id="modal">
+  <div class="mbox">
+    <h3 id="mtitle">编辑事项</h3>
+    <input type="hidden" id="eid">
+    <div id="aonly">
+      <div class="fg"><label>事项名称 *</label><input id="ei" placeholder="事项名称"></div>
+      <div class="frow">
+        <div class="fg"><label>责任人</label><input id="ep" placeholder="如：赵云飞 或 赵云飞&李建萍"></div>
+        <div class="fg"><label>发起人</label><input id="eini" placeholder="如：Dandy"></div>
+      </div>
+      <div class="fg"><label>LIVOX对接人</label><input id="el" placeholder="如：Dandy"></div>
+      <div class="fg"><label>提交内容／要求</label><textarea id="es" rows="3"></textarea></div>
+      <div class="frow">
+        <div class="fg"><label>DDL（一次性事项截止日，重复性待办为下次到期日）</label><input id="ed" placeholder="如：2026-08-15"></div>
+        <div class="fg">
+          <label>优先级</label>
+          <select id="epr"><option value="高">🔴 高</option><option value="中">🟡 中</option><option value="低">🟢 低</option></select>
+        </div>
+      </div>
+      <div class="fg" style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="erecur" style="width:auto" onchange="toggleRecurField()">
+        <label style="margin:0;font-weight:400;font-size:13px;color:#333">重复性待办（周期性事项）</label>
+      </div>
+      <div id="recur-field" style="display:none;background:#f5f8ff;border:1px solid #dde3f0;border-radius:8px;padding:13px 13px 4px;margin-bottom:13px">
+        <div class="frow">
+          <div class="fg">
+            <label>重复周期</label>
+            <select id="erectype" onchange="onRecurTypeChange()">
+              <option value="每周">每周</option>
+              <option value="每双周">每双周（隔周）</option>
+              <option value="每月">每月</option>
+              <option value="每季度">每季度</option>
+              <option value="自定义">自定义</option>
+            </select>
+          </div>
+          <div class="fg" id="erecval-wrap">
+            <label id="erecval-label">时间节点</label>
+            <select id="erecval" onchange="updateRecurPreview()"></select>
+          </div>
+        </div>
+        <div class="fg" id="ernote-wrap" style="display:none">
+          <label>自定义周期说明</label>
+          <input id="ernote" placeholder="如：每两周的周五" oninput="updateRecurPreview()">
+        </div>
+        <div style="font-size:12px;color:#555;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+          <span>周期预览：<b id="erecpreview" style="color:#1a3a8f">—</b></span>
+          <button type="button" class="be" style="padding:3px 10px;font-size:12px" onclick="calcNextDdl()">按周期填充下次到期日</button>
+        </div>
+      </div>
+      <div class="fg"><label>提交物链接</label><input id="eu" placeholder="https://..."></div>
+    </div>
+    <div class="fg"><label>进展说明</label><textarea id="epg" rows="3" placeholder="填写最新进展..."></textarea></div>
+    <div class="frow">
+      <div class="fg">
+        <label>闭环状态</label>
+        <select id="est"><option value="未完成">● 未完成</option><option value="完成">✓ 完成</option><option value="挂起">⏸ 挂起</option></select>
+      </div>
+      <div class="fg" id="lc-field">
+        <label>Livox确认（管理员）</label>
+        <select id="elc"><option value="未完成">● 未完成</option><option value="完成">✓ 完成</option><option value="挂起">⏸ 挂起</option></select>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="bcancel" onclick="closeM()">取消</button>
+      <button class="bsave" onclick="saveM()">保存</button>
+    </div>
   </div>
 </div>
 
-<!-- 按责任人统计 -->
-<div class="section" style="margin-top:14px;">
-  <div class="section-title">按责任人统计</div>
-  <div style="overflow-x:auto;">
-    <div class="person-table-wrap">
-      <table class="person-table">
-        <thead>
-          <tr>
-            <th class="left" rowspan="2" style="width:90px;">责任人</th>
-            <th rowspan="2">待办总数</th>
-            <th rowspan="2">点状待办</th>
-            <th rowspan="2">重点事项</th>
-            <th rowspan="2">已完成</th>
-            <th rowspan="2">挂起</th>
-            <th rowspan="2">关闭</th>
-            <th rowspan="2">进行中</th>
-            <th colspan="3" style="text-align:center;border-bottom:1px solid rgba(255,255,255,.2);">进行中待办的到期状态</th>
-          </tr>
-          <tr>
-            <th class="sub-th2 green-dot">正常</th>
-            <th class="sub-th2 orange-dot">临期</th>
-            <th class="sub-th2 red-dot">逾期</th>
-          </tr>
-        </thead>
-        <tbody id="personBody"></tbody>
+<!-- 公开填写Modal -->
+<div class="mbg" id="pub-modal">
+  <div class="mbox">
+    <h3 id="pub-title">✏️ 填写事项进展</h3>
+    <input type="hidden" id="pub-id">
+    <div style="background:#e8f5e9;border-left:4px solid #2e7d32;padding:8px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#1b5e20;margin-bottom:16px">以 <strong id="pub-whoami">—</strong> 身份提交，可填写进展或认领责任</div>
+    <div class="fg"><label>认领/更新责任人（填写即认领，留空保持原责任人）</label><input id="pub-person" placeholder="填写您的名字即可认领，多人用&分隔"></div>
+    <div class="fg"><label>进展说明 *</label><textarea id="pub-progress" rows="4" placeholder="请填写最新进展情况..."></textarea></div>
+    <div class="fg"><label>提交物（文档链接/具体方案）</label><input id="pub-url" placeholder="如：https://docs.xxx.com/..."></div>
+    <div class="fg">
+      <label>闭环状态（可选）</label>
+      <select id="pub-status">
+        <option value="">— 不修改 —</option>
+        <option value="未完成">● 未完成</option>
+        <option value="完成">✓ 完成</option>
+        <option value="挂起">⏸ 挂起</option>
+      </select>
+    </div>
+    <div class="mfoot">
+      <button class="bcancel" onclick="closePub()">取消</button>
+      <button class="bsave" style="background:#2e7d32" onclick="savePub()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量上传Modal -->
+<div class="mbg" id="batch-modal">
+  <div class="mbox" style="width:660px">
+    <h3>⬆ 批量上传事项</h3>
+    <div style="background:#e8f0fe;border-left:4px solid #1a3a8f;padding:8px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#1a3a8f;margin-bottom:14px">请先下载模板，按格式填写后上传。从第3行开始填写数据。</div>
+    <div style="margin-bottom:12px">
+      <button class="bsave" style="background:#1565c0;padding:7px 14px;font-size:12px" onclick="downloadTemplate()">⬇ 下载Excel模板</button>
+    </div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+      <div class="uz-icon">📂</div>
+      <div class="uz-text">点击选择文件 或 拖拽Excel文件到此处</div>
+      <div class="uz-hint">支持 .xlsx / .xls 格式</div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+    <div id="batch-preview" style="display:none">
+      <div style="font-size:12px;color:#555;margin-bottom:6px">预览：共 <strong id="preview-count">0</strong> 条</div>
+      <div class="preview-scroll">
+        <table class="ptable">
+          <thead><tr><th>#</th><th>事项名称</th><th>DDL</th><th>责任人</th><th>发起人</th><th>优先级</th><th>状态</th></tr></thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="upload-result" style="display:none"></div>
+    <div class="mfoot">
+      <button class="bcancel" onclick="closeBatch()">取消</button>
+      <button class="bsave" id="btn-do-upload" onclick="doUpload()" style="display:none">✅ 确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 日志Modal -->
+<div class="log-modal" id="log-modal">
+  <div class="log-box">
+    <div class="log-hdr">
+      <span>📋 操作日志</span>
+      <button class="log-close" onclick="closeLog()">✕</button>
+    </div>
+    <div class="log-filter">
+      <span style="font-size:12px;color:#666;font-weight:600">筛选：</span>
+      <input id="log-search" placeholder="搜索姓名/事项..." oninput="renderLog()">
+      <select id="log-action-filter" onchange="renderLog()">
+        <option value="">全部操作</option>
+        <option value="公开填写">公开填写</option>
+        <option value="编辑事项">编辑事项</option>
+        <option value="新增事项">新增事项</option>
+        <option value="删除事项">删除事项</option>
+        <option value="批量导入">批量导入</option>
+        <option value="新增权限">新增权限</option>
+        <option value="删除权限">删除权限</option>
+        <option value="导出备份">导出备份</option>
+        <option value="发送周报">发送周报</option>
+        <option value="测试发送周报">测试发送周报</option>
+        <option value="发送DDL提醒">发送DDL提醒</option>
+        <option value="邮件测试">邮件测试</option>
+        <option value="登录">登录</option>
+      </select>
+      <span id="log-count" style="font-size:12px;color:#888;margin-left:4px"></span>
+    </div>
+    <div class="log-body">
+      <table class="ltable">
+        <thead><tr><th style="width:140px">时间</th><th style="width:90px">操作人</th><th style="width:80px">操作</th><th style="width:60px">ID</th><th style="min-width:130px">事项</th><th>详情</th></tr></thead>
+        <tbody id="log-tbody"></tbody>
       </table>
+      <div id="log-empty" class="log-empty" style="display:none">暂无操作记录</div>
     </div>
   </div>
 </div>
 
-<!-- Filter bar -->
-<div class="filter-bar">
-  <span class="filter-label">筛选：</span>
-  <button class="tab-btn active" id="tabAll" onclick="setTab('all')">全部</button>
-  <button class="tab-btn" id="tabDone" onclick="setTab('done')">
-    <span class="dot dot-green"></span>已完成
-  </button>
-  <button class="tab-btn" id="tabPending" onclick="setTab('pending')">
-    <span class="dot dot-red"></span>未完成
-  </button>
-  <button class="tab-btn" id="tabMine" onclick="setTab('mine')">
-    👤 我的事项
-  </button>
-  <div class="filter-right">
-    <select class="filter-select" id="filterPerson" onchange="renderTable()">
-      <option value="">全部责任人</option>
-    </select>
-    <select class="filter-select" id="filterLivox" onchange="renderTable()">
-      <option value="">全部对接人</option>
-    </select>
-    <input class="search-input" id="searchInput" placeholder="🔍 搜索事项..." oninput="renderTable()">
-    <span class="count-info" id="tableCount"></span>
-  </div>
-</div>
-
-<!-- Items table -->
-<div class="items-section">
-  <div class="section-title" style="border-radius:4px 4px 0 0;">事项明细</div>
-  <div class="items-table-wrap">
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th style="width:36px;">序号</th>
-          <th style="min-width:130px;text-align:left;">事项</th>
-          <th style="min-width:180px;text-align:left;">提交内容 / 需求</th>
-          <th style="width:80px;">DDL</th>
-          <th style="width:70px;">责任人</th>
-          <th style="min-width:160px;text-align:left;">进展</th>
-          <th style="width:80px;">提交物</th>
-          <th style="width:70px;">闭环状态</th>
-          <th style="width:70px;">Livox确认</th>
-          <th style="width:90px;">更新时间</th>
-          <th style="width:100px;">操作</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- ───── Login Modal ───── -->
-<div class="overlay" id="loginOverlay">
-  <div class="modal login-modal">
-    <h2>登录</h2>
-    <div class="tab-bar">
-      <div class="tab active" id="tabPerson" onclick="switchLoginTab('person')">责任人登录</div>
-      <div class="tab" id="tabAdmin" onclick="switchLoginTab('admin')">管理员登录</div>
+<!-- 权限管理Modal -->
+<div class="log-modal" id="perm-modal">
+  <div class="log-box" style="width:600px">
+    <div class="log-hdr">
+      <span>👥 权限管理（登录白名单）</span>
+      <button class="log-close" onclick="closePerm()">✕</button>
     </div>
-    <div id="panelPerson">
-      <div class="form-group" style="margin-bottom:14px;">
-        <label>姓名</label>
-        <input id="loginName" placeholder="输入您的姓名" onkeydown="if(event.key==='Enter')loginPerson()">
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal('loginOverlay')">取消</button>
-        <button class="modal-btn modal-btn-primary" onclick="loginPerson()">确认</button>
+    <div style="padding:14px 18px 6px">
+      <div style="background:#e8f0fe;border-left:4px solid #1a3a8f;padding:8px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#1a3a8f;margin-bottom:14px">只有下方名单里的邮箱才能登录看板；勾选"管理员"可赋予新增/编辑/删除等全部权限，否则为普通责任人权限。</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input id="perm-name" placeholder="姓名" style="flex:1;min-width:90px;padding:8px 10px;border:1.5px solid #c5cae9;border-radius:7px;font-size:13px;font-family:inherit">
+        <input id="perm-email" placeholder="邮箱" style="flex:1.6;min-width:160px;padding:8px 10px;border:1.5px solid #c5cae9;border-radius:7px;font-size:13px;font-family:inherit">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;white-space:nowrap"><input type="checkbox" id="perm-admin" style="width:auto">设为管理员</label>
+        <button class="bsave" style="padding:8px 16px;font-size:12px" onclick="addPerm()">＋ 添加</button>
       </div>
     </div>
-    <div id="panelAdmin" style="display:none;">
-      <div class="form-group" style="margin-bottom:12px;">
-        <label>管理员密码</label>
-        <input id="adminPwd" type="password" placeholder="输入管理员密码" onkeydown="if(event.key==='Enter')loginAdmin()">
-      </div>
-      <div class="err-msg" id="adminErr"></div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal('loginOverlay')">取消</button>
-        <button class="modal-btn modal-btn-primary" onclick="loginAdmin()">登录</button>
+    <div class="log-body" style="padding:0 18px 16px">
+      <div id="perm-list"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px dashed #dde3f0">
+        <div style="font-size:13px;font-weight:700;color:#1a3a8f;margin-bottom:4px">📧 邮件通知</div>
+        <div style="font-size:12px;color:#888;line-height:1.7;margin-bottom:10px">每周五 17:30 自动发送周报；每天 17:00 自动给责任人发送 DDL 临期/逾期提醒（配置见部署说明）。也可在下方手动测试：</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="bsave" style="background:#1565c0;padding:7px 14px;font-size:12px" onclick="notifyTest()">📨 发送测试邮件</button>
+          <button class="bsave" style="background:#00838f;padding:7px 14px;font-size:12px" onclick="openWeeklyTest()">🧪 测试发送周报（选收件人）</button>
+          <button class="bsave" style="background:#2e7d32;padding:7px 14px;font-size:12px" onclick="notifyRun('weekly')">立即发送周报（全部）</button>
+          <button class="bsave" style="background:#6a1b9a;padding:7px 14px;font-size:12px" onclick="notifyRun('reminders')">立即发送DDL提醒</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ───── Fill Modal ───── -->
-<div class="overlay" id="fillOverlay">
-  <div class="modal">
-    <h2 id="fillTitle">填写进展</h2>
-    <input type="hidden" id="fillId">
-    <div class="form-row">
-      <div class="form-group">
-        <label>责任人</label>
-        <input id="fillPerson" placeholder="姓名">
+<!-- 测试发送周报：选择收件人 -->
+<div class="log-modal" id="weekly-test-modal">
+  <div class="log-box" style="width:560px">
+    <div class="log-hdr">
+      <span>🧪 测试发送周报</span>
+      <button class="log-close" onclick="closeWeeklyTest()">✕</button>
+    </div>
+    <div style="padding:14px 18px 6px">
+      <div style="background:#e0f7fa;border-left:4px solid #00838f;padding:8px 12px;border-radius:0 6px 6px 0;font-size:12px;color:#006064;margin-bottom:14px">
+        测试发送只会发给下方勾选/填写的邮箱，不会打扰所有人。邮件标题会带【测试】字样。
       </div>
-      <div class="form-group">
-        <label>闭环状态</label>
-        <select id="fillStatus">
-          <option value="未完成">未完成</option>
-          <option value="完成">完成</option>
-          <option value="挂起">挂起</option>
-        </select>
+      <div class="fg">
+        <label>从授权名单中选择收件人</label>
+        <div id="weekly-test-list" style="max-height:180px;overflow-y:auto;border:1px solid #e0e4f0;border-radius:8px;padding:8px 10px"></div>
       </div>
+      <div class="fg">
+        <label>额外收件邮箱（可选，多个用逗号分隔）</label>
+        <input id="weekly-test-extra" placeholder="如：someone@company.com, another@company.com" oninput="updateWeeklyTestCount()">
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:4px">已选择：<b id="weekly-test-count" style="color:#00838f">0</b> 个邮箱</div>
     </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>进展 / 闭环情况</label>
-      <textarea id="fillProgress" rows="3" placeholder="填写进展说明..."></textarea>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>提交物链接 / 说明</label>
-      <input id="fillSubmitUrl" placeholder="链接或文件名">
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeModal('fillOverlay')">取消</button>
-      <button class="modal-btn modal-btn-primary" onclick="submitFill()">提交</button>
+    <div class="mfoot" style="padding:0 18px 18px">
+      <button class="bcancel" onclick="closeWeeklyTest()">取消</button>
+      <button class="bsave" style="background:#00838f" onclick="sendWeeklyTest()">发送测试周报</button>
     </div>
   </div>
 </div>
 
-<!-- ───── Edit Modal ───── -->
-<div class="overlay" id="editOverlay">
-  <div class="modal">
-    <h2>编辑事项</h2>
-    <input type="hidden" id="editId">
-    <div class="form-row">
-      <div class="form-group">
-        <label>日期</label>
-        <input id="editDate" type="date">
-      </div>
-      <div class="form-group">
-        <label>DDL</label>
-        <input id="editDdl" placeholder="如 2026-08-15 或 每月31日">
-      </div>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>事项 *</label>
-      <input id="editItem">
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>提交物需求</label>
-      <textarea id="editSubmit" rows="3"></textarea>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>责任人</label>
-        <input id="editPerson" placeholder="多人用/分隔">
-      </div>
-      <div class="form-group">
-        <label>LIVOX对接人</label>
-        <input id="editLivox">
-      </div>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>进展 / 闭环情况</label>
-      <textarea id="editProgress" rows="3"></textarea>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>提交物链接 / 说明</label>
-      <input id="editSubmitUrl">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>闭环状态</label>
-        <select id="editStatus">
-          <option value="未完成">未完成</option>
-          <option value="完成">完成</option>
-          <option value="挂起">挂起</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>LIVOX确认</label>
-        <select id="editLivoxConfirm">
-          <option value="未完成">未完成</option>
-          <option value="完成">完成</option>
-          <option value="挂起">挂起</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeModal('editOverlay')">取消</button>
-      <button class="modal-btn modal-btn-primary" onclick="submitEdit()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- ───── Add Modal ───── -->
-<div class="overlay" id="addOverlay">
-  <div class="modal">
-    <h2>新增事项</h2>
-    <div class="form-row">
-      <div class="form-group">
-        <label>日期</label>
-        <input id="addDate" type="date">
-      </div>
-      <div class="form-group">
-        <label>DDL</label>
-        <input id="addDdl" placeholder="如 2026-08-15 或 每月31日">
-      </div>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>事项 *</label>
-      <input id="addItem" placeholder="事项名称">
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>提交物需求</label>
-      <textarea id="addSubmit" rows="3"></textarea>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>责任人</label>
-        <input id="addPerson" placeholder="多人用/分隔">
-      </div>
-      <div class="form-group">
-        <label>LIVOX对接人</label>
-        <input id="addLivox">
-      </div>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>进展</label>
-      <textarea id="addProgress" rows="2"></textarea>
-    </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>提交物链接 / 说明</label>
-      <input id="addSubmitUrl">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>闭环状态</label>
-        <select id="addStatus">
-          <option value="未完成">未完成</option>
-          <option value="完成">完成</option>
-          <option value="挂起">挂起</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>LIVOX确认</label>
-        <select id="addLivoxConfirm">
-          <option value="未完成">未完成</option>
-          <option value="完成">完成</option>
-          <option value="挂起">挂起</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeModal('addOverlay')">取消</button>
-      <button class="modal-btn modal-btn-primary" onclick="submitAdd()">新增</button>
-    </div>
-  </div>
-</div>
-
-<!-- ───── Log Modal ───── -->
-<div class="overlay" id="logOverlay">
-  <div class="modal log-modal">
-    <h2>操作日志</h2>
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <input class="search-input" id="logSearch" placeholder="搜索日志..." oninput="renderLog()" style="flex:1;max-width:none;">
-      <button class="modal-btn" onclick="loadLog()" style="padding:5px 12px;font-size:12px;">刷新</button>
-    </div>
-    <div id="logContent"></div>
-    <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeModal('logOverlay')">关闭</button>
-    </div>
-  </div>
-</div>
-
-<!-- ───── Batch Modal ───── -->
-<div class="overlay" id="batchOverlay">
-  <div class="modal">
-    <h2>批量上传</h2>
-    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"
-         ondragover="event.preventDefault();this.classList.add('drag')"
-         ondragleave="this.classList.remove('drag')"
-         ondrop="handleDrop(event)">
-      <div style="font-size:32px;margin-bottom:8px;">📂</div>
-      <div>点击或拖拽 Excel 文件至此处</div>
-      <div style="font-size:11px;margin-top:5px;color:#bbb;">支持 .xlsx 格式，从第2行起填数据</div>
-      <input type="file" id="fileInput" accept=".xlsx" style="display:none" onchange="handleFile(this.files[0])">
-    </div>
-    <div id="batchPreview" style="margin-top:12px;"></div>
-    <div id="batchErr" style="color:#e53935;font-size:12px;margin-top:6px;"></div>
-    <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeModal('batchOverlay')">取消</button>
-      <button class="modal-btn modal-btn-primary" id="batchConfirmBtn" style="display:none" onclick="confirmBatch()">确认导入</button>
-    </div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
-// ─── State ────────────────────────────────────────────────────────────────────
-var S = {
-  rows: [],
-  role: 'guest',
-  name: '',
-  token: '',
-  logRows: [],
-  batchItems: [],
-  activeTab: 'all',
-};
+var S = {role:null, name:'', email:'', token:'', showAllDone:false};
+try { S.showAllDone = localStorage.getItem('kanban_showAllDone')==='1'; } catch(e){}
+var DATA = [];
+var FIL = 'all';
+var _allLogs = [];
+var _batchData = [];
+var _needPw = false;
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-function init() {
-  updateDateBar();
-  setInterval(updateDateBar, 60000);
-  loadData();
+/* ─── 登录（仅授权邮箱，管理员邮箱需二次输入密码） ─── */
+function showLogin() {
+  document.getElementById('lerr').textContent = '';
+  document.getElementById('login').style.display = 'flex';
 }
-
-function updateDateBar() {
-  var now = new Date();
-  var pad = function(n){return n<10?'0'+n:String(n);};
-  var dateStr = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
-  document.getElementById('todayStr').textContent = dateStr;
-  document.getElementById('lastUpdate').textContent = dateStr+' '+pad(now.getHours())+':'+pad(now.getMinutes());
-  // Next update: next full hour
-  var next = new Date(now);
-  next.setHours(next.getHours()+1, 0, 0, 0);
-  var diff = Math.floor((next-now)/1000);
-  var hh = Math.floor(diff/3600), mm = Math.floor((diff%3600)/60), ss = diff%60;
-  document.getElementById('countdownStr').textContent = pad(hh)+':'+pad(mm)+':'+pad(ss);
-  document.getElementById('nextUpdateStr').textContent = dateStr+' '+pad(next.getHours())+':00';
-}
-
-async function loadData() {
-  try {
-    var resp = await fetch('/api/data');
-    S.rows = await resp.json();
-    populateFilters();
-    renderAll();
-  } catch(e) {
-    console.error('加载失败', e);
-  }
-}
-
-function renderAll() {
-  renderSummary();
-  renderPersonTable();
-  renderTable();
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function today() { var d=new Date(); d.setHours(0,0,0,0); return d; }
-
-function parseDdl(ddl) {
-  if (!ddl) return null;
-  var d = new Date(ddl);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function ddlStatus(row) {
-  var ddl = row.ddl || '';
-  if (/每|月|周/.test(ddl)) return 'periodic';
-  var d = parseDdl(ddl);
-  if (!d) return 'none';
-  if (row.status==='完成' && row.livox_confirm==='完成') return 'done';
-  var diff = Math.floor((d - today()) / 86400000);
-  if (diff < 0) return 'overdue';
-  if (diff <= 3) return 'near';
-  return 'normal';
-}
-
-function isDone(row) { return row.status==='完成' && row.livox_confirm==='完成'; }
-function isSuspended(row) { return row.status==='挂起'; }
-function isPeriodic(row) { return /每|月|周/.test(row.ddl||''); }
-function isKey(row) { return !isPeriodic(row) && parseDdl(row.ddl)!==null; }
-
-function calcStats(rows) {
-  var total=rows.length, done=0, suspended=0, periodic=0, key=0;
-  var inprogress=0, normal=0, near=0, overdue=0;
-  rows.forEach(function(r){
-    if(isDone(r)) done++;
-    else if(isSuspended(r)) suspended++;
-    if(isPeriodic(r)) periodic++;
-    if(isKey(r)) key++;
-    var st=ddlStatus(r);
-    if(!isDone(r)&&!isSuspended(r)){
-      inprogress++;
-      if(st==='overdue') overdue++;
-      else if(st==='near') near++;
-      else normal++;
+function loginStep() {
+  var email = document.getElementById('ilemail').value.trim().toLowerCase();
+  if (!email) { document.getElementById('lerr').textContent = '请输入邮箱'; return; }
+  var body = {email: email};
+  if (_needPw) body.password = document.getElementById('ilpw').value;
+  document.getElementById('lerr').textContent = '';
+  fetch('/api/auth', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    if (d.need_password) {
+      _needPw = true;
+      document.getElementById('ilpw').style.display = '';
+      document.getElementById('lhint').textContent = '该邮箱为管理员账号，请输入管理员密码';
+      document.getElementById('ilpw').focus();
+      return;
     }
-  });
-  return {total,done,suspended,periodic,key,inprogress,normal,near,overdue,closed:0};
-}
-
-function numCell(n, cls) {
-  if(n===0) return '<td class="td-center"><span style="color:#bbb;">0</span></td>';
-  return '<td class="td-center"><span class="'+cls+'">'+n+'</span></td>';
-}
-
-// ─── Summary table ────────────────────────────────────────────────────────────
-function renderSummary() {
-  var s = calcStats(S.rows);
-  var html = '<tr>' +
-    '<td>待办闭环汇总</td>' +
-    '<td class="td-center num-blue">'+s.total+'</td>' +
-    '<td class="td-center">'+s.periodic+'</td>' +
-    '<td class="td-center">'+s.key+'</td>' +
-    '<td class="td-center num-green">'+s.done+'</td>' +
-    numCell(s.suspended,'num-gray') +
-    '<td class="td-center"><span style="color:#bbb;">0</span></td>' +
-    '<td class="td-center num-red">'+s.inprogress+'</td>' +
-    '<td class="td-center">'+s.normal+'</td>' +
-    numCell(s.near,'num-orange') +
-    numCell(s.overdue,'num-red') +
-    '</tr>';
-  document.getElementById('summaryBody').innerHTML = html;
-}
-
-// ─── Person table ─────────────────────────────────────────────────────────────
-function renderPersonTable() {
-  var persons = {};
-  S.rows.forEach(function(r){
-    var ps = (r.person||'—').split('/');
-    ps.forEach(function(p){
-      p=p.trim()||'—';
-      if(!persons[p]) persons[p]=[];
-      persons[p].push(r);
-    });
-  });
-
-  var pList = Object.keys(persons).sort();
-  var totals = {total:0,done:0,suspended:0,periodic:0,key:0,inprogress:0,normal:0,near:0,overdue:0};
-
-  var html = '';
-  pList.forEach(function(name){
-    var s = calcStats(persons[name]);
-    var cls = s.overdue>0 ? 'name-cell overdue-name' : 'name-cell';
-    html += '<tr>' +
-      '<td class="'+cls+'">'+esc(name)+'</td>' +
-      '<td class="td-center">'+s.total+'</td>' +
-      '<td class="td-center">'+s.periodic+'</td>' +
-      '<td class="td-center">'+s.key+'</td>' +
-      '<td class="td-center num-green">'+s.done+'</td>' +
-      numCell(s.suspended,'num-gray') +
-      '<td class="td-center"><span style="color:#bbb;">0</span></td>' +
-      (s.inprogress>0?'<td class="td-center num-red">'+s.inprogress+'</td>':'<td class="td-center"><span style="color:#bbb;">0</span></td>') +
-      '<td class="td-center">'+s.normal+'</td>' +
-      numCell(s.near,'num-orange') +
-      numCell(s.overdue,'num-red') +
-      '</tr>';
-    totals.total+=s.total; totals.done+=s.done; totals.suspended+=s.suspended;
-    totals.periodic+=s.periodic; totals.key+=s.key;
-    totals.inprogress+=s.inprogress; totals.normal+=s.normal;
-    totals.near+=s.near; totals.overdue+=s.overdue;
-  });
-
-  // totals row
-  html += '<tr>' +
-    '<td class="name-cell">合计</td>' +
-    '<td class="td-center">'+totals.total+'</td>' +
-    '<td class="td-center">'+totals.periodic+'</td>' +
-    '<td class="td-center">'+totals.key+'</td>' +
-    '<td class="td-center num-green">'+totals.done+'</td>' +
-    numCell(totals.suspended,'num-gray') +
-    '<td class="td-center"><span style="color:#bbb;">0</span></td>' +
-    (totals.inprogress>0?'<td class="td-center num-red">'+totals.inprogress+'</td>':'<td class="td-center"><span style="color:#bbb;">0</span></td>') +
-    '<td class="td-center">'+totals.normal+'</td>' +
-    numCell(totals.near,'num-orange') +
-    numCell(totals.overdue,'num-red') +
-    '</tr>';
-
-  document.getElementById('personBody').innerHTML = html;
-}
-
-// ─── Filter tabs ──────────────────────────────────────────────────────────────
-function setTab(tab) {
-  S.activeTab = tab;
-  ['all','done','pending','mine'].forEach(function(t){
-    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
-  });
-  renderTable();
-}
-
-function populateFilters() {
-  var persons = [...new Set(S.rows.flatMap(r=>(r.person||'').split('/').map(p=>p.trim()).filter(Boolean)))].sort();
-  var livoxes = [...new Set(S.rows.map(r=>r.livox||'').filter(Boolean))].sort();
-  var fp = document.getElementById('filterPerson');
-  var curP = fp.value;
-  fp.innerHTML = '<option value="">全部责任人</option>'+persons.map(p=>'<option value="'+p+'">'+esc(p)+'</option>').join('');
-  fp.value = curP;
-  var fl = document.getElementById('filterLivox');
-  var curL = fl.value;
-  fl.innerHTML = '<option value="">全部对接人</option>'+livoxes.map(l=>'<option value="'+l+'">'+esc(l)+'</option>').join('');
-  fl.value = curL;
-}
-
-// ─── Main table ───────────────────────────────────────────────────────────────
-function renderTable() {
-  var personF = document.getElementById('filterPerson').value;
-  var livoxF  = document.getElementById('filterLivox').value;
-  var search  = document.getElementById('searchInput').value.trim().toLowerCase();
-
-  var rows = S.rows.filter(function(r){
-    // tab filter
-    if(S.activeTab==='done' && !isDone(r)) return false;
-    if(S.activeTab==='pending' && (isDone(r)||isSuspended(r))) return false;
-    if(S.activeTab==='mine' && S.name && !(r.person||'').split('/').map(p=>p.trim()).includes(S.name)) return false;
-    // dropdown filters
-    if(personF && !(r.person||'').split('/').map(p=>p.trim()).includes(personF)) return false;
-    if(livoxF  && r.livox!==livoxF) return false;
-    // search
-    if(search){
-      var hay=[r.item,r.submit,r.person,r.progress,r.ddl,r.livox].join(' ').toLowerCase();
-      if(!hay.includes(search)) return false;
-    }
-    return true;
-  });
-
-  document.getElementById('tableCount').textContent = '共 '+rows.length+' 条';
-
-  var html = '';
-  rows.forEach(function(r){
-    var st = ddlStatus(r);
-    var ddlCls = st==='overdue'?'td-ddl ddl-overdue':st==='near'?'td-ddl ddl-near':st==='periodic'?'td-ddl ddl-periodic':st==='done'?'td-ddl ddl-done':'td-ddl';
-    var sBadge = r.status==='完成'?'badge-done':r.status==='挂起'?'badge-suspended':'badge-pending';
-    var lcBadge = r.livox_confirm==='完成'?'badge-done':r.livox_confirm==='挂起'?'badge-suspended':'badge-pending';
-
-    var submitHtml = '';
-    if(r.submit_url){
-      var url = r.submit_url;
-      submitHtml = url.startsWith('http')
-        ? '<a class="submit-link" href="'+esc(url)+'" target="_blank">🔗 链接</a>'
-        : '<span style="font-size:11px;color:#555;">'+esc(url.slice(0,20))+'</span>';
-    }
-
-    var overdueTag = st==='overdue'?'<span class="tag-overdue">逾期</span>':'';
-
-    var actions = '<div class="actions">';
-    actions += '<button class="btn btn-fill" onclick="openFillModal('+r.id+')">→ 填写</button>';
-    if(S.role==='admin'){
-      actions += '<button class="btn btn-edit" onclick="openEditModal('+r.id+')">✎</button>';
-      actions += '<button class="btn btn-del" onclick="deleteItem('+r.id+')">🗑</button>';
-    }
-    actions += '</div>';
-
-    html += '<tr>' +
-      '<td class="td-id">'+r.id+'</td>' +
-      '<td class="td-item">'+overdueTag+esc(r.item)+'</td>' +
-      '<td class="td-submit">'+esc(r.submit||'')+'</td>' +
-      '<td class="'+ddlCls+'">'+esc(r.ddl||'—')+'</td>' +
-      '<td class="td-center" style="white-space:nowrap;">'+esc(r.person||'—')+'</td>' +
-      '<td class="td-progress">'+esc(r.progress||'')+'</td>' +
-      '<td class="td-center">'+submitHtml+'</td>' +
-      '<td class="td-center"><span class="badge '+sBadge+'">'+esc(r.status||'未完成')+'</span></td>' +
-      '<td class="td-center"><span class="badge '+lcBadge+'">'+esc(r.livox_confirm||'未完成')+'</span></td>' +
-      '<td class="td-center" style="font-size:11px;color:#aaa;white-space:nowrap;">'+esc(r.updated_at||'')+(r.updated_by?'<br><span style="color:#bbb;">by '+esc(r.updated_by)+'</span>':'')+'</td>' +
-      '<td>'+actions+'</td>' +
-      '</tr>';
-  });
-
-  document.getElementById('tableBody').innerHTML = html ||
-    '<tr><td colspan="11" style="text-align:center;padding:28px;color:#bbb;font-size:13px;">暂无数据</td></tr>';
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-function updateUserBadge() {
-  var lbl = document.getElementById('userLabel');
-  var at  = document.getElementById('adminTools');
-  if(S.role==='admin'){
-    lbl.textContent='管理员';
-    at.style.display='flex';
-  } else if(S.role==='person'){
-    lbl.textContent=S.name;
-    at.style.display='none';
-  } else {
-    lbl.textContent='dandy.chen';
-    at.style.display='none';
-  }
-}
-
-function openLoginModal(){
-  document.getElementById('loginName').value=S.name||'';
-  document.getElementById('adminPwd').value='';
-  document.getElementById('adminErr').textContent='';
-  switchLoginTab('person');
-  document.getElementById('loginOverlay').classList.add('show');
-}
-
-function switchLoginTab(tab){
-  document.getElementById('tabPerson').classList.toggle('active',tab==='person');
-  document.getElementById('tabAdmin').classList.toggle('active',tab==='admin');
-  document.getElementById('panelPerson').style.display=tab==='person'?'':'none';
-  document.getElementById('panelAdmin').style.display=tab==='admin'?'':'none';
-}
-
-function loginPerson(){
-  var name=document.getElementById('loginName').value.trim();
-  if(!name){alert('请输入姓名');return;}
-  S.role='person'; S.name=name; S.token='';
-  closeModal('loginOverlay');
-  updateUserBadge();
-  renderTable();
-}
-
-async function loginAdmin(){
-  var pwd=document.getElementById('adminPwd').value;
-  try{
-    var resp=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})});
-    var data=await resp.json();
-    if(data.ok){
-      S.role='admin'; S.token=data.token; S.name='管理员';
-      closeModal('loginOverlay');
-      updateUserBadge();
-      renderTable();
+    if (d.ok) {
+      S = {role:d.role, name:d.name, email:email, token:d.token, showAllDone:S.showAllDone};
+      try { localStorage.setItem('kanban_session', JSON.stringify({role:S.role,name:S.name,email:S.email,token:S.token})); } catch(e){}
+      _needPw = false;
+      enter();
+      load();
     } else {
-      document.getElementById('adminErr').textContent=data.msg||'密码错误';
+      document.getElementById('lerr').textContent = d.msg || '登录失败';
     }
-  }catch(e){document.getElementById('adminErr').textContent='请求失败';}
+  }).catch(function(){ document.getElementById('lerr').textContent = '连接失败，请检查网络'; });
+}
+function enter() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('ilpw').style.display = 'none';
+  document.getElementById('ilpw').value = '';
+  document.getElementById('lhint').textContent = '未在名单中的邮箱无法登录，如需开通请联系管理员';
+  var b = document.getElementById('rbadge');
+  var btn = document.getElementById('login-btn');
+  if (S.role === 'admin') {
+    b.textContent = '管理员 · ' + S.name; b.className = 'badge b-admin';
+    document.getElementById('badd').style.display = '';
+    document.getElementById('btpl').style.display = '';
+    document.getElementById('bbatch').style.display = '';
+    document.getElementById('bexport').style.display = '';
+    document.getElementById('btn-log').style.display = '';
+    document.getElementById('btn-perm').style.display = '';
+    document.getElementById('bmine').style.display = 'none';
+  } else {
+    b.textContent = '👤 ' + S.name; b.className = 'badge b-person';
+    document.getElementById('bmine').style.display = '';
+    document.getElementById('badd').style.display = 'none';
+    document.getElementById('btpl').style.display = 'none';
+    document.getElementById('bbatch').style.display = 'none';
+    document.getElementById('bexport').style.display = 'none';
+    document.getElementById('btn-log').style.display = 'none';
+    document.getElementById('btn-perm').style.display = 'none';
+  }
+  btn.textContent = '退出'; btn.onclick = doLogout;
+  renderDetail();
+}
+function doLogout() {
+  S = {role:null, name:'', email:'', token:'', showAllDone:S.showAllDone};
+  try { localStorage.removeItem('kanban_session'); } catch(e){}
+  DATA = [];
+  var tb = document.getElementById('dtbody'); if (tb) tb.innerHTML = '';
+  var rtb = document.getElementById('rdtbody'); if (rtb) rtb.innerHTML = '';
+  document.getElementById('badd').style.display = 'none';
+  document.getElementById('btpl').style.display = 'none';
+  document.getElementById('bbatch').style.display = 'none';
+  document.getElementById('bexport').style.display = 'none';
+  document.getElementById('btn-log').style.display = 'none';
+  document.getElementById('btn-perm').style.display = 'none';
+  document.getElementById('bmine').style.display = 'none';
+  document.getElementById('ilemail').value = '';
+  showLogin();
 }
 
-// ─── Fill ─────────────────────────────────────────────────────────────────────
-function openFillModal(id){
-  var row=S.rows.find(r=>r.id===id); if(!row)return;
-  document.getElementById('fillId').value=id;
-  document.getElementById('fillTitle').textContent='填写进展 — '+(row.item||'').slice(0,28);
-  document.getElementById('fillPerson').value=row.person||(S.name||'');
-  document.getElementById('fillProgress').value=row.progress||'';
-  document.getElementById('fillSubmitUrl').value=row.submit_url||'';
-  document.getElementById('fillStatus').value=row.status||'未完成';
-  document.getElementById('fillOverlay').classList.add('show');
+/* ─── 数据 ─── */
+function load() {
+  if (!S.token) return;
+  fetch('/api/data', {headers:{'X-Session': S.token}}).then(function(r){
+    if (r.status === 401) { doLogout(); return null; }
+    return r.json();
+  }).then(function(d){
+    if (!d) return;
+    DATA = d;
+    var now = new Date();
+    document.getElementById('lupd').textContent = now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate())+' '+p2(now.getHours())+':'+p2(now.getMinutes());
+    renderSum(); renderPerson(); renderDetail();
+  }).catch(function(){ showT('数据加载失败','err'); });
 }
 
-async function submitFill(){
-  var id=parseInt(document.getElementById('fillId').value);
-  var body={
-    person:document.getElementById('fillPerson').value.trim(),
-    progress:document.getElementById('fillProgress').value.trim(),
-    submit_url:document.getElementById('fillSubmitUrl').value.trim(),
-    status:document.getElementById('fillStatus').value,
-    caller:S.name||'匿名',
-  };
-  try{
-    var resp=await fetch('/api/public_update/'+id,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Person':encodeURIComponent(S.name||'匿名')},
-      body:JSON.stringify(body)
-    });
-    var data=await resp.json();
-    if(data.ok){closeModal('fillOverlay');await loadData();}
-    else alert(data.error||'提交失败');
-  }catch(e){alert('提交失败: '+e.message);}
+/* ─── DDL ─── */
+function ddlT(ddl, status) {
+  if (!ddl || ddl==='None' || ddl==='') return 'c';
+  if (/每|周|月/.test(ddl)) return 'c';
+  var d = new Date(ddl); if (isNaN(d.getTime())) return 'c';
+  if (status==='完成') return 'n';
+  var diff = Math.floor((d - new Date().setHours(0,0,0,0)) / 86400000);
+  if (diff < 0) return 'v';
+  if (diff <= 3) return 's';
+  return 'n';
+}
+function ddlTag(ddl, status) {
+  var t = ddlT(ddl, status);
+  var label = (!ddl || ddl==='None') ? '—' : ddl;
+  var cls = {c:'dc',n:'dn',s:'ds',v:'dv'}[t];
+  var ico = {c:'',n:'',s:'⏰ ',v:'△ '}[t];
+  return '<span class="'+cls+'">'+ico+label+'</span>';
+}
+function ps(s) {
+  if (!s || s==='—') return ['—'];
+  return s.split(/[&\/、,，]/).map(function(p){return p.trim();}).filter(Boolean);
+}
+function isMine(row) { return ps(row.person).indexOf(S.name) >= 0; }
+function isDone(row) { return row.status==='完成' && row.livox_confirm==='完成'; }
+function isHold(row) { return row.status==='挂起'; }
+function priorityOf(row) { return (row.priority==='高'||row.priority==='低') ? row.priority : '中'; }
+function priTag(row) {
+  var p = priorityOf(row);
+  var cls = p==='高' ? 'pri-high' : (p==='低' ? 'pri-low' : 'pri-mid');
+  var ico = p==='高' ? '🔴' : (p==='低' ? '🟢' : '🟡');
+  return '<span class="'+cls+'">'+ico+' '+p+'</span>';
+}
+function isOldDone(row) {
+  if (!isDone(row)) return false;
+  var ref = row.completed_at || row.updated_at;
+  if (!ref) return false;
+  var d = new Date(ref.replace(' ', 'T'));
+  if (isNaN(d.getTime())) return false;
+  return (new Date() - d) > 7*86400000;
+}
+function toggleOldDone() {
+  S.showAllDone = !S.showAllDone;
+  try { localStorage.setItem('kanban_showAllDone', S.showAllDone ? '1' : '0'); } catch(e){}
+  var btn = document.getElementById('btn-toggle-old');
+  btn.textContent = S.showAllDone ? '⚙ 隐藏旧的已完成事项' : '⚙ 显示全部已完成';
+  btn.classList.toggle('on', S.showAllDone);
+  renderDetail();
 }
 
-// ─── Edit ─────────────────────────────────────────────────────────────────────
-function openEditModal(id){
-  var row=S.rows.find(r=>r.id===id); if(!row)return;
-  document.getElementById('editId').value=id;
-  document.getElementById('editDate').value=row.date||'';
-  document.getElementById('editDdl').value=row.ddl||'';
-  document.getElementById('editItem').value=row.item||'';
-  document.getElementById('editSubmit').value=row.submit||'';
-  document.getElementById('editPerson').value=row.person||'';
-  document.getElementById('editLivox').value=row.livox||'';
-  document.getElementById('editProgress').value=row.progress||'';
-  document.getElementById('editSubmitUrl').value=row.submit_url||'';
-  document.getElementById('editStatus').value=row.status||'未完成';
-  document.getElementById('editLivoxConfirm').value=row.livox_confirm||'未完成';
-  document.getElementById('editOverlay').classList.add('show');
-}
-
-async function submitEdit(){
-  var id=parseInt(document.getElementById('editId').value);
-  var body={
-    date:document.getElementById('editDate').value,
-    ddl:document.getElementById('editDdl').value.trim(),
-    item:document.getElementById('editItem').value.trim(),
-    submit:document.getElementById('editSubmit').value.trim(),
-    person:document.getElementById('editPerson').value.trim(),
-    livox:document.getElementById('editLivox').value.trim(),
-    progress:document.getElementById('editProgress').value.trim(),
-    submit_url:document.getElementById('editSubmitUrl').value.trim(),
-    status:document.getElementById('editStatus').value,
-    livox_confirm:document.getElementById('editLivoxConfirm').value,
-  };
-  try{
-    var resp=await fetch('/api/update/'+id,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Admin-Token':S.token,'X-Person':encodeURIComponent(S.name||'管理员')},
-      body:JSON.stringify(body)
-    });
-    var data=await resp.json();
-    if(data.ok){closeModal('editOverlay');await loadData();}
-    else alert(data.error||'保存失败');
-  }catch(e){alert('保存失败: '+e.message);}
-}
-
-// ─── Add ──────────────────────────────────────────────────────────────────────
-function openAddModal(){
-  document.getElementById('addDate').value=new Date().toISOString().slice(0,10);
-  ['addDdl','addItem','addSubmit','addPerson','addLivox','addProgress','addSubmitUrl'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('addStatus').value='未完成';
-  document.getElementById('addLivoxConfirm').value='未完成';
-  document.getElementById('addOverlay').classList.add('show');
-}
-
-async function submitAdd(){
-  var item=document.getElementById('addItem').value.trim();
-  if(!item){alert('请填写事项名称');return;}
-  var body={
-    date:document.getElementById('addDate').value,
-    ddl:document.getElementById('addDdl').value.trim(),
-    item:item,
-    submit:document.getElementById('addSubmit').value.trim(),
-    person:document.getElementById('addPerson').value.trim(),
-    livox:document.getElementById('addLivox').value.trim(),
-    progress:document.getElementById('addProgress').value.trim(),
-    submit_url:document.getElementById('addSubmitUrl').value.trim(),
-    status:document.getElementById('addStatus').value,
-    livox_confirm:document.getElementById('addLivoxConfirm').value,
-  };
-  try{
-    var resp=await fetch('/api/add',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Admin-Token':S.token,'X-Person':encodeURIComponent(S.name||'管理员')},
-      body:JSON.stringify(body)
-    });
-    var data=await resp.json();
-    if(data.ok){closeModal('addOverlay');await loadData();}
-    else alert(data.error||'新增失败');
-  }catch(e){alert('新增失败: '+e.message);}
-}
-
-// ─── Delete ───────────────────────────────────────────────────────────────────
-async function deleteItem(id){
-  var row=S.rows.find(r=>r.id===id);
-  if(!confirm('确认删除：'+(row?row.item:''))) return;
-  try{
-    var resp=await fetch('/api/delete/'+id,{
-      method:'DELETE',
-      headers:{'X-Admin-Token':S.token,'X-Person':encodeURIComponent(S.name||'管理员')}
-    });
-    var data=await resp.json();
-    if(data.ok) await loadData();
-    else alert(data.error||'删除失败');
-  }catch(e){alert('删除失败: '+e.message);}
-}
-
-// ─── Log ──────────────────────────────────────────────────────────────────────
-async function loadLog(){
-  try{
-    var resp=await fetch('/api/log',{headers:{'X-Admin-Token':S.token}});
-    S.logRows=await resp.json();
-    renderLog();
-  }catch(e){document.getElementById('logContent').innerHTML='<p style="color:#e53935">加载失败</p>';}
-}
-
-function renderLog(){
-  var q=document.getElementById('logSearch').value.trim().toLowerCase();
-  var logs=S.logRows;
-  if(q) logs=logs.filter(l=>JSON.stringify(l).toLowerCase().includes(q));
-  if(!logs.length){document.getElementById('logContent').innerHTML='<p style="text-align:center;padding:20px;color:#bbb;">暂无日志</p>';return;}
-  var html='<table class="log-table"><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>事项</th><th>变更</th></tr></thead><tbody>';
-  logs.slice(0,200).forEach(function(l){
-    var changed=l.changed||{};
-    var cs=Object.entries(changed).map(([k,v])=>k+': '+v.old+' → '+v.new).join('\n')||'—';
-    html+='<tr><td style="white-space:nowrap;">'+esc(l.time||'')+'</td><td>'+esc(l.caller||'')+'</td><td>'+esc(l.op||'')+'</td><td style="max-width:180px;word-break:break-all;">'+esc((l.item||'').slice(0,40))+'</td><td style="white-space:pre-wrap;font-size:11px;color:#888;">'+esc(cs)+'</td></tr>';
+/* ─── 统计 ─── */
+function calcSt(rows) {
+  var r = {total:0,pt:0,key:0,done:0,hold:0,inp:0,nm:0,sn:0,ov:0};
+  rows.forEach(function(row) {
+    r.total++;
+    var t = ddlT(row.ddl, row.status);
+    if (row.recurring) r.pt++; else r.key++;
+    if (isDone(row)) r.done++;
+    else if (isHold(row)) r.hold++;
+    else { r.inp++; if(t==='v') r.ov++; else if(t==='s') r.sn++; else r.nm++; }
   });
-  html+='</tbody></table>';
-  document.getElementById('logContent').innerHTML=html;
+  return r;
+}
+function renderSum() {
+  var st = calcSt(DATA);
+  document.getElementById('s0').textContent = st.total;
+  document.getElementById('s1').textContent = st.pt;
+  document.getElementById('s2').textContent = st.key;
+  document.getElementById('s3').textContent = st.done;
+  document.getElementById('s4').textContent = st.hold;
+  document.getElementById('s6').textContent = st.inp;
+  document.getElementById('s7').textContent = st.nm;
+  document.getElementById('s8').textContent = st.sn;
+  document.getElementById('s9').textContent = st.ov;
+}
+function renderPerson() {
+  var map = {};
+  DATA.forEach(function(row) {
+    var t = ddlT(row.ddl, row.status);
+    ps(row.person).forEach(function(name) {
+      if (!map[name]) map[name] = {total:0,pt:0,key:0,done:0,hold:0,inp:0,nm:0,sn:0,ov:0};
+      var m = map[name]; m.total++;
+      if (row.recurring) m.pt++; else m.key++;
+      if (isDone(row)) m.done++;
+      else if (isHold(row)) m.hold++;
+      else { m.inp++; if(t==='v') m.ov++; else if(t==='s') m.sn++; else m.nm++; }
+    });
+  });
+  var tb = document.getElementById('ptbody');
+  tb.innerHTML = '';
+  var T = {total:0,pt:0,key:0,done:0,hold:0,inp:0,nm:0,sn:0,ov:0};
+  Object.keys(map).sort().forEach(function(name) {
+    var m = map[name];
+    Object.keys(T).forEach(function(k){ T[k] += m[k]; });
+    var me = S.role==='person' && name===S.name;
+    var ns = m.ov>0 ? 'color:#d32f2f;font-weight:700' : 'font-weight:700';
+    if (me) ns = 'color:#4a3700;font-weight:700';
+    tb.innerHTML += '<tr'+(me?' style="background:#fffde7"':'')+'>'+
+      '<td class="tl" style="'+ns+'">'+name+'</td>'+
+      '<td>'+m.total+'</td><td>'+m.pt+'</td><td>'+m.key+'</td>'+
+      '<td>'+m.done+'</td><td>'+m.hold+'</td><td>0</td>'+
+      '<td class="red">'+m.inp+'</td>'+
+      '<td>'+m.nm+'</td><td>'+m.sn+'</td><td>'+m.ov+'</td></tr>';
+  });
+  tb.innerHTML += '<tr class="tot">'+
+    '<td class="tl">合计</td>'+
+    '<td>'+T.total+'</td><td>'+T.pt+'</td><td>'+T.key+'</td>'+
+    '<td>'+T.done+'</td><td>'+T.hold+'</td><td>0</td>'+
+    '<td class="red">'+T.inp+'</td>'+
+    '<td>'+T.nm+'</td><td>'+T.sn+'</td><td>'+T.ov+'</td></tr>';
+}
+function linkify(s) {
+  return (s||'').replace(/https?:\/\/[^\s\n]+/g, function(u){ return '<a href="'+u+'" target="_blank">🔗链接</a>'; });
+}
+function renderDetail() {
+  var tb  = document.getElementById('dtbody');
+  var rtb = document.getElementById('rdtbody');
+  tb.innerHTML = ''; rtb.innerHTML = '';
+  var hiddenOld = 0, hiddenOld2 = 0;
+  DATA.forEach(function(row) {
+    var done = isDone(row);
+    var mine = isMine(row);
+    var isRecur = !!row.recurring;
+    var show = FIL==='all' || (FIL==='done'&&done) || (FIL==='undone'&&!done) || (FIL==='mine'&&mine);
+    var oldDone = isOldDone(row);
+    if (show && oldDone && !S.showAllDone) { show = false; if (isRecur) hiddenOld2++; else hiddenOld++; }
+    var ph = ps(row.person).map(function(p){
+      return '<span class="pc'+(S.role==='person'&&p===S.name?' me':'')+'">'+p+'</span>';
+    }).join(' ');
+    var sh = row.status==='完成' ? '<span class="sdone">✓ 完成</span>'+(row.status_done_at?'<div class="umeta">'+row.status_done_at+'</div>':'') :
+             row.status==='挂起' ? '<span class="shold">⏸ 挂起</span>' :
+             '<span class="sund">● 未完成</span>';
+    var lc = row.livox_confirm || '未完成';
+    var lcH = lc==='完成' ? '<span class="sdone">✓ 完成</span>' :
+              lc==='挂起' ? '<span class="shold">⏸ 挂起</span>' :
+              '<span class="sund">● 未完成</span>';
+    var subUrl = row.submit_url ? linkify(row.submit_url) : '<span style="color:#bbb;font-size:12px">—</span>';
+    var eb = '<button class="bpub" onclick="openPublic('+row.id+')">✏ 填写</button>';
+    if (S.role==='admin') {
+      eb = '<button class="be" onclick="openEdit('+row.id+')">✏ 编辑</button>'+
+           '<button class="bd" onclick="delRow('+row.id+')">🗑</button>'+
+           '<br><button class="bpub" style="margin-top:3px" onclick="openPublic('+row.id+')">✏ 填写</button>';
+    }
+    var progressCell = '<div class="ptxt">'+(row.progress||'<span style="color:#bbb">暂无进展</span>')+'</div>'+
+      (row.updated_at?'<div class="umeta">'+row.updated_at+(row.updated_by?' by '+row.updated_by:'')+'</div>':'');
+    var tr = document.createElement('tr');
+    if (!show) tr.className = 'hidden';
+    tr.dataset.status = done ? 'done' : 'undone';
+    tr.dataset.mine   = mine ? '1' : '0';
+    if (isRecur) {
+      tr.innerHTML =
+        '<td style="text-align:center;font-weight:700;color:#00838f">'+row.id+'</td>'+
+        '<td><div class="iname">'+row.item+'</div></td>'+
+        '<td style="text-align:center">'+priTag(row)+'</td>'+
+        '<td style="text-align:center"><span class="rc">🔁 '+(row.recur_note||'—')+'</span></td>'+
+        '<td><div class="stxt">'+linkify(row.submit)+'</div></td>'+
+        '<td style="text-align:center">'+ddlTag(row.ddl, row.status)+'</td>'+
+        '<td style="text-align:center">'+ph+'</td>'+
+        '<td style="text-align:center">'+(row.initiator||'<span style="color:#bbb;font-size:12px">—</span>')+'</td>'+
+        '<td>'+progressCell+'</td>'+
+        '<td>'+subUrl+'</td>'+
+        '<td style="text-align:center">'+sh+'</td>'+
+        '<td style="text-align:center">'+lcH+'</td>'+
+        '<td style="text-align:center">'+eb+'</td>';
+      rtb.appendChild(tr);
+    } else {
+      tr.innerHTML =
+        '<td style="text-align:center;font-weight:700;color:#1565c0">'+row.id+'</td>'+
+        '<td><div class="iname">'+row.item+'</div></td>'+
+        '<td style="text-align:center">'+priTag(row)+'</td>'+
+        '<td><div class="stxt">'+linkify(row.submit)+'</div></td>'+
+        '<td style="text-align:center">'+ddlTag(row.ddl, row.status)+'</td>'+
+        '<td style="text-align:center">'+ph+'</td>'+
+        '<td style="text-align:center">'+(row.initiator||'<span style="color:#bbb;font-size:12px">—</span>')+'</td>'+
+        '<td>'+progressCell+'</td>'+
+        '<td>'+subUrl+'</td>'+
+        '<td style="text-align:center">'+sh+'</td>'+
+        '<td style="text-align:center">'+lcH+'</td>'+
+        '<td style="text-align:center">'+eb+'</td>';
+      tb.appendChild(tr);
+    }
+  });
+  var hint = document.getElementById('hide-hint');
+  hint.textContent = (hiddenOld>0 && !S.showAllDone) ? ('（已隐藏 '+hiddenOld+' 条完成超过一周的事项，点击右上角"⚙ 显示全部已完成"查看）') : '';
+  var hint2 = document.getElementById('hide-hint2');
+  hint2.textContent = (hiddenOld2>0 && !S.showAllDone) ? ('（已隐藏 '+hiddenOld2+' 条完成超过一周的事项）') : '';
+}
+function setF(f, btn) {
+  FIL = f;
+  document.querySelectorAll('.fb').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  renderDetail();
 }
 
-function openLogModal(){document.getElementById('logOverlay').classList.add('show');loadLog();}
-
-// ─── Batch ────────────────────────────────────────────────────────────────────
-function openBatchModal(){
-  S.batchItems=[];
-  document.getElementById('batchPreview').innerHTML='';
-  document.getElementById('batchErr').textContent='';
-  document.getElementById('batchConfirmBtn').style.display='none';
-  document.getElementById('fileInput').value='';
-  document.getElementById('batchOverlay').classList.add('show');
+/* ─── 编辑Modal ─── */
+function openEdit(id) {
+  var row = DATA.find(function(r){ return r.id==id; });
+  if (!row) return;
+  document.getElementById('eid').value = id;
+  document.getElementById('mtitle').textContent = '✏️ 编辑：'+row.item;
+  document.getElementById('epg').value = row.progress || '';
+  document.getElementById('est').value = row.status   || '未完成';
+  document.getElementById('elc').value = row.livox_confirm || '未完成';
+  var adm = S.role==='admin';
+  document.getElementById('aonly').style.display = adm ? '' : 'none';
+  document.getElementById('lc-field').style.display = adm ? '' : 'none';
+  if (adm) {
+    document.getElementById('ei').value = row.item || '';
+    document.getElementById('ep').value = row.person || '';
+    document.getElementById('eini').value = row.initiator || '';
+    document.getElementById('el').value = row.livox  || '';
+    document.getElementById('es').value = row.submit || '';
+    document.getElementById('ed').value = row.ddl    || '';
+    document.getElementById('eu').value = row.submit_url || '';
+    document.getElementById('epr').value = priorityOf(row);
+    document.getElementById('erecur').checked = !!row.recurring;
+    setRecurFields(row.recur_type, row.recur_value, row.recur_note);
+    toggleRecurField();
+  }
+  document.getElementById('modal').className = 'mbg show';
+}
+function toggleRecurField() {
+  var on = document.getElementById('erecur').checked;
+  document.getElementById('recur-field').style.display = on ? '' : 'none';
+  if (on && !document.getElementById('erecval').options.length) onRecurTypeChange();
+  if (on) updateRecurPreview();
+}
+var RECUR_WEEKDAYS = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+function fillRecurOptions(type, keepValue) {
+  var sel = document.getElementById('erecval');
+  var wrap = document.getElementById('erecval-wrap');
+  var label = document.getElementById('erecval-label');
+  var noteWrap = document.getElementById('ernote-wrap');
+  sel.innerHTML = '';
+  if (type === '自定义') {
+    wrap.style.display = 'none';
+    noteWrap.style.display = '';
+    return;
+  }
+  wrap.style.display = '';
+  noteWrap.style.display = 'none';
+  var opts = [];
+  if (type === '每周' || type === '每双周') {
+    label.textContent = '星期几';
+    for (var i = 1; i <= 7; i++) opts.push([String(i), RECUR_WEEKDAYS[i]]);
+  } else {
+    label.textContent = '每月几号';
+    for (var d = 1; d <= 31; d++) opts.push([String(d), d + '日']);
+    opts.push(['last', '月末最后一天']);
+  }
+  opts.forEach(function(o){
+    var op = document.createElement('option');
+    op.value = o[0]; op.textContent = o[1];
+    if (keepValue !== undefined && String(keepValue) === o[0]) op.selected = true;
+    sel.appendChild(op);
+  });
+}
+function onRecurTypeChange() {
+  fillRecurOptions(document.getElementById('erectype').value);
+  updateRecurPreview();
+}
+function recurNoteFrom(type, value, custom) {
+  if (type === '自定义') return (custom || '').trim();
+  if (!value) return type;
+  if (type === '每周' || type === '每双周') return type + RECUR_WEEKDAYS[parseInt(value, 10)];
+  return type + (value === 'last' ? '最后一天' : (value + '日'));
+}
+function updateRecurPreview() {
+  var type = document.getElementById('erectype').value;
+  var value = document.getElementById('erecval').value;
+  var custom = document.getElementById('ernote').value;
+  var note = recurNoteFrom(type, value, custom);
+  document.getElementById('erecpreview').textContent = note || '—';
+}
+function setRecurFields(type, value, note) {
+  type = type || (note ? '自定义' : '每周');
+  document.getElementById('erectype').value = type;
+  if (type === '自定义') {
+    fillRecurOptions(type);
+    document.getElementById('ernote').value = note || '';
+  } else {
+    fillRecurOptions(type, value || (type === '每周' || type === '每双周' ? '5' : '1'));
+  }
+  updateRecurPreview();
+}
+function isoWeekday(d) { var w = d.getDay(); return w === 0 ? 7 : w; }
+function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+function fmtDate(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+function computeNextRecur(type, value) {
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var y = today.getFullYear(), mo = today.getMonth();
+  function mk(yy, mm) {
+    var dim = daysInMonth(yy, mm + 1);
+    var day = (value === 'last') ? dim : Math.min(parseInt(value, 10) || 1, dim);
+    return new Date(yy, mm, day);
+  }
+  if (type === '每周' || type === '每双周') {
+    var target = parseInt(value, 10) || 1;
+    var add = (target - isoWeekday(today) + 7) % 7;
+    var d = new Date(today); d.setDate(d.getDate() + add);
+    return d;
+  }
+  if (type === '每月') {
+    var c = mk(y, mo);
+    if (c < today) { var nm = mo + 1, ny = y; if (nm > 11) { nm = 0; ny++; } c = mk(ny, nm); }
+    return c;
+  }
+  if (type === '每季度') {
+    var qm = mo; while (qm % 3 !== 0) qm++;
+    var qy = y; if (qm > 11) { qm -= 12; qy++; }
+    var c2 = mk(qy, qm);
+    if (c2 < today) { qm += 3; if (qm > 11) { qm -= 12; qy++; } c2 = mk(qy, qm); }
+    return c2;
+  }
+  return null;
+}
+function calcNextDdl() {
+  var type = document.getElementById('erectype').value;
+  if (type === '自定义') { showT('自定义周期无法自动计算，请手动填写 DDL', 'err'); return; }
+  var d = computeNextRecur(type, document.getElementById('erecval').value);
+  if (!d) { showT('无法计算，请手动填写 DDL', 'err'); return; }
+  document.getElementById('ed').value = fmtDate(d);
+  showT('已按周期填入下次到期日：' + fmtDate(d), 'ok');
+}
+function collectRecurFields() {
+  var recurring = document.getElementById('erecur').checked;
+  if (!recurring) return {recurring: false, recur_type: '', recur_value: '', recur_note: ''};
+  var type = document.getElementById('erectype').value;
+  var value = type === '自定义' ? '' : document.getElementById('erecval').value;
+  var custom = document.getElementById('ernote').value;
+  return {recurring: true, recur_type: type, recur_value: value, recur_note: recurNoteFrom(type, value, custom)};
+}
+function openAdd() {
+  document.getElementById('eid').value = '';
+  document.getElementById('mtitle').textContent = '＋ 新增事项';
+  document.getElementById('aonly').style.display = '';
+  document.getElementById('lc-field').style.display = '';
+  ['ei','ep','el','es','ed','eu','epg','ernote','eini'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('est').value = '未完成';
+  document.getElementById('elc').value = '未完成';
+  document.getElementById('epr').value = '中';
+  document.getElementById('erecur').checked = false;
+  setRecurFields('每周', '5', '');
+  toggleRecurField();
+  document.getElementById('modal').className = 'mbg show';
+}
+function closeM() { document.getElementById('modal').className = 'mbg'; }
+function saveM() {
+  var id  = document.getElementById('eid').value;
+  var adm = S.role==='admin';
+  var body = {progress: document.getElementById('epg').value, status: document.getElementById('est').value};
+  if (adm) {
+    Object.assign(body, {
+      item: document.getElementById('ei').value, person: document.getElementById('ep').value,
+      initiator: document.getElementById('eini').value,
+      livox: document.getElementById('el').value, submit: document.getElementById('es').value,
+      ddl:  document.getElementById('ed').value, submit_url: document.getElementById('eu').value,
+      livox_confirm: document.getElementById('elc').value,
+      priority: document.getElementById('epr').value
+    });
+    Object.assign(body, collectRecurFields());
+  }
+  var hdrs = {'Content-Type':'application/json','X-Session':S.token};
+  var url = id ? ('/api/update/'+id) : '/api/add';
+  fetch(url, {method:'POST', headers:hdrs, body:JSON.stringify(body)})
+  .then(function(r){return r.json();})
+  .then(function(d){ if(d.ok){closeM();showT('保存成功','ok');load();} else showT(d.msg||'保存失败','err'); })
+  .catch(function(){ showT('请求失败','err'); });
+}
+function delRow(id) {
+  if (!confirm('确认删除该事项？')) return;
+  fetch('/api/delete/'+id, {method:'DELETE', headers:{'X-Session':S.token}})
+  .then(function(r){return r.json();})
+  .then(function(d){ if(d.ok){showT('已删除','ok');load();} else showT('删除失败','err'); });
 }
 
-function handleDrop(e){
+/* ─── 公开填写 ─── */
+function openPublic(id) {
+  var row = DATA.find(function(r){ return r.id==id; });
+  if (!row) return;
+  document.getElementById('pub-id').value = id;
+  document.getElementById('pub-title').textContent = '✏️ 填写进展：'+row.item;
+  document.getElementById('pub-whoami').textContent = S.name;
+  document.getElementById('pub-person').value = '';
+  document.getElementById('pub-progress').value = row.progress || '';
+  document.getElementById('pub-url').value = '';
+  document.getElementById('pub-status').value = '';
+  document.getElementById('pub-modal').className = 'mbg show';
+}
+function closePub() { document.getElementById('pub-modal').className = 'mbg'; }
+function savePub() {
+  var id       = document.getElementById('pub-id').value;
+  var person   = document.getElementById('pub-person').value.trim();
+  var progress = document.getElementById('pub-progress').value.trim();
+  var url      = document.getElementById('pub-url').value.trim();
+  var status   = document.getElementById('pub-status').value;
+  if (!progress) { showT('请填写进展内容','err'); return; }
+  var body = {progress:progress};
+  if (person) body.person = person;
+  if (url)    body.submit_url = url;
+  if (status) body.status = status;
+  fetch('/api/public_update/'+id, {method:'POST', headers:{'Content-Type':'application/json','X-Session':S.token}, body:JSON.stringify(body)})
+  .then(function(r){return r.json();})
+  .then(function(d){ if(d.ok){closePub();showT('提交成功！','ok');load();} else showT(d.msg||'提交失败','err'); })
+  .catch(function(){ showT('提交失败，请检查网络','err'); });
+}
+
+/* ─── 批量上传 ─── */
+function downloadTemplate() {
+  fetch('/api/template', {headers:{'X-Session':S.token}})
+  .then(function(r){ if(!r.ok) throw new Error('下载失败'); return r.blob(); })
+  .then(function(blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download='事项明细模板.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }).catch(function(){ showT('模板下载失败','err'); });
+}
+function downloadExport() {
+  showT('正在生成备份文件...','ok');
+  fetch('/api/export', {headers:{'X-Session':S.token}})
+  .then(function(r){ if(!r.ok) throw new Error('导出失败'); return r.blob(); })
+  .then(function(blob){
+    var now = new Date();
+    var ts = now.getFullYear()+p2(now.getMonth()+1)+p2(now.getDate())+'_'+p2(now.getHours())+p2(now.getMinutes());
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download='和控看板备份_'+ts+'.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showT('备份下载完成','ok');
+  }).catch(function(){ showT('备份下载失败','err'); });
+}
+function openBatch() {
+  _batchData = [];
+  document.getElementById('batch-preview').style.display = 'none';
+  document.getElementById('upload-result').style.display = 'none';
+  document.getElementById('btn-do-upload').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('batch-modal').className = 'mbg show';
+}
+function closeBatch() { document.getElementById('batch-modal').className = 'mbg'; }
+function handleDrop(e) {
   e.preventDefault();
-  document.getElementById('uploadArea').classList.remove('drag');
-  var f=e.dataTransfer.files[0]; if(f) handleFile(f);
+  document.getElementById('upload-zone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
 }
-
-async function handleFile(file){
-  if(!file)return;
-  document.getElementById('batchErr').textContent='';
-  document.getElementById('batchPreview').innerHTML='<p style="color:#aaa;font-size:12px;">解析中...</p>';
-  document.getElementById('batchConfirmBtn').style.display='none';
-  var reader=new FileReader();
-  reader.onload=async function(e){
-    var b64=btoa(String.fromCharCode(...new Uint8Array(e.target.result)));
-    try{
-      var resp=await fetch('/api/batch_add',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-Admin-Token':S.token,'X-Person':encodeURIComponent(S.name||'管理员')},
-        body:JSON.stringify({excel_b64:b64,parse_only:true})
-      });
-      var data=await resp.json();
-      if(!data.ok){document.getElementById('batchErr').textContent=data.error||'解析失败';return;}
-      S.batchItems=data.preview||[];
-      renderBatchPreview(S.batchItems);
-      if(S.batchItems.length>0) document.getElementById('batchConfirmBtn').style.display='';
-    }catch(err){document.getElementById('batchErr').textContent='解析失败: '+err.message;}
+function handleFile(file) {
+  if (!file) return;
+  if (!/\.(xlsx|xls)$/i.test(file.name)) { showURes('请上传 .xlsx 或 .xls 格式的文件', false); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var b64 = btoa(String.fromCharCode.apply(null, new Uint8Array(e.target.result)));
+    fetch('/api/batch_add', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Session':S.token},
+      body: JSON.stringify({file_base64:b64, parse_only:true})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if (d.ok && d.rows) { _batchData=d.rows; showPreview(_batchData); }
+      else showURes(d.msg||'解析失败', false);
+    }).catch(function(){ showURes('上传失败','err'); });
   };
   reader.readAsArrayBuffer(file);
 }
-
-function renderBatchPreview(items){
-  if(!items.length){document.getElementById('batchPreview').innerHTML='<p style="color:#aaa;font-size:12px;">未解析到数据</p>';return;}
-  var html='<p style="font-size:12px;color:#555;margin-bottom:6px;">解析到 '+items.length+' 条：</p><div style="max-height:180px;overflow-y:auto;border:1px solid #eee;border-radius:6px;"><table style="width:100%;font-size:12px;border-collapse:collapse;"><tr style="background:#f5f5f5;"><th style="padding:5px 8px;">事项</th><th>DDL</th><th>责任人</th></tr>';
-  items.forEach(function(it){html+='<tr style="border-top:1px solid #f0f0f0;"><td style="padding:4px 8px;">'+esc(it.item||'')+'</td><td>'+esc(it.ddl||'')+'</td><td>'+esc(it.person||'')+'</td></tr>';});
-  html+='</table></div>';
-  document.getElementById('batchPreview').innerHTML=html;
+function showPreview(rows) {
+  var tb = document.getElementById('preview-tbody');
+  tb.innerHTML = rows.map(function(r,i){
+    return '<tr><td>'+(i+1)+'</td><td>'+r.item.substring(0,20)+'</td><td>'+(r.ddl||'—')+'</td><td>'+(r.person||'—')+'</td><td>'+(r.initiator||'—')+'</td><td>'+(r.priority||'中')+'</td><td>'+(r.status||'未完成')+'</td></tr>';
+  }).join('');
+  document.getElementById('preview-count').textContent = rows.length;
+  document.getElementById('batch-preview').style.display = rows.length>0 ? '' : 'none';
+  document.getElementById('btn-do-upload').style.display = rows.length>0 ? '' : 'none';
+  document.getElementById('upload-result').style.display = 'none';
+}
+function doUpload() {
+  if (!_batchData.length) return;
+  document.getElementById('btn-do-upload').textContent = '导入中...';
+  fetch('/api/batch_add', {method:'POST', headers:{'Content-Type':'application/json','X-Session':S.token}, body:JSON.stringify(_batchData)})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    document.getElementById('btn-do-upload').textContent = '✅ 确认导入';
+    if (d.ok) { showURes('✅ 成功导入 '+d.added+' 条事项！', true); document.getElementById('btn-do-upload').style.display='none'; load(); setTimeout(closeBatch,1500); }
+    else showURes('❌ '+(d.msg||'导入失败'), false);
+  }).catch(function(){ document.getElementById('btn-do-upload').textContent='✅ 确认导入'; showURes('❌ 请求失败','err'); });
+}
+function showURes(msg, ok) {
+  var el = document.getElementById('upload-result');
+  el.className = 'ures '+(ok?'ok':'err'); el.textContent = msg; el.style.display = '';
 }
 
-async function confirmBatch(){
-  if(!S.batchItems.length)return;
-  try{
-    var resp=await fetch('/api/batch_add',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Admin-Token':S.token,'X-Person':encodeURIComponent(S.name||'管理员')},
-      body:JSON.stringify({items:S.batchItems})
-    });
-    var data=await resp.json();
-    if(data.ok){alert('成功导入 '+data.count+' 条');closeModal('batchOverlay');await loadData();}
-    else alert(data.error||'导入失败');
-  }catch(e){alert('导入失败: '+e.message);}
+/* ─── 操作日志 ─── */
+function openLog() {
+  document.getElementById('log-search').value = '';
+  document.getElementById('log-action-filter').value = '';
+  document.getElementById('log-modal').className = 'log-modal show';
+  fetch('/api/log', {headers:{'X-Session':S.token}})
+  .then(function(r){return r.json();})
+  .then(function(d){ _allLogs = Array.isArray(d)?d:[]; renderLog(); })
+  .catch(function(){ document.getElementById('log-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:#c62828;padding:20px">日志加载失败</td></tr>'; });
+}
+function closeLog() { document.getElementById('log-modal').className = 'log-modal'; }
+function renderLog() {
+  var kw  = (document.getElementById('log-search').value||'').toLowerCase();
+  var act = document.getElementById('log-action-filter').value;
+  var rows = _allLogs.filter(function(r){
+    if (act && r.action!==act) return false;
+    if (kw && !((r.operator||'').toLowerCase().includes(kw)||(r.item_name||'').toLowerCase().includes(kw)||(r.detail||'').toLowerCase().includes(kw))) return false;
+    return true;
+  });
+  document.getElementById('log-count').textContent = '共'+rows.length+'条';
+  var tb = document.getElementById('log-tbody');
+  var em = document.getElementById('log-empty');
+  if (!rows.length) { tb.innerHTML=''; em.style.display=''; return; }
+  em.style.display = 'none';
+  var acls = {'公开填写':'la-pub','编辑事项':'la-edit','新增事项':'la-add','删除事项':'la-del','批量导入':'la-add','新增权限':'la-add','删除权限':'la-del','导出备份':'la-edit','发送周报':'la-pub','测试发送周报':'la-pub','发送DDL提醒':'la-pub','邮件测试':'la-pub','登录':'la-login'};
+  tb.innerHTML = rows.map(function(r){
+    return '<tr><td style="white-space:nowrap">'+r.time+'</td><td><strong>'+r.operator+'</strong></td>'+
+      '<td><span class="'+(acls[r.action]||'la-edit')+'">'+r.action+'</span></td>'+
+      '<td style="text-align:center">'+(r.item_id||'—')+'</td>'+
+      '<td>'+(r.item_name||'—')+'</td><td style="color:#555">'+(r.detail||'—')+'</td></tr>';
+  }).join('');
 }
 
-function downloadTemplate(){window.open('/api/template','_blank');}
+/* ─── 权限管理（登录白名单） ─── */
+function openPerm() {
+  document.getElementById('perm-modal').className = 'log-modal show';
+  loadPerm();
+}
+function closePerm() { document.getElementById('perm-modal').className = 'log-modal'; }
+function loadPerm() {
+  fetch('/api/contacts', {headers:{'X-Session':S.token}})
+  .then(function(r){ return r.json(); })
+  .then(function(list){
+    var el = document.getElementById('perm-list');
+    if (!list.length) { el.innerHTML = '<div style="text-align:center;color:#bbb;padding:24px">暂无授权名单</div>'; return; }
+    el.innerHTML = list.map(function(c){
+      var badge = c.role==='admin'
+        ? '<span class="badge b-admin" style="font-size:11px;padding:2px 9px">管理员</span>'
+        : '<span style="color:#999;font-size:12px">责任人</span>';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:13px">'+
+        '<span style="flex:1;font-weight:600">'+c.name+'</span>'+
+        '<span style="flex:1.6;color:#666">'+c.email+'</span>'+
+        '<span style="width:56px;text-align:center">'+badge+'</span>'+
+        '<button class="bd" onclick="delPerm(\''+c.email.replace(/'/g,"\\'")+'\')">🗑</button></div>';
+    }).join('');
+  })
+  .catch(function(){ document.getElementById('perm-list').innerHTML = '<div style="text-align:center;color:#c62828;padding:24px">加载失败</div>'; });
+}
+function addPerm() {
+  var name  = document.getElementById('perm-name').value.trim();
+  var email = document.getElementById('perm-email').value.trim().toLowerCase();
+  var role  = document.getElementById('perm-admin').checked ? 'admin' : 'person';
+  if (!name || !email) { showT('请填写姓名和邮箱','err'); return; }
+  fetch('/api/contacts', {method:'POST', headers:{'Content-Type':'application/json','X-Session':S.token}, body:JSON.stringify({name:name,email:email,role:role})})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok) {
+      showT('已添加授权','ok');
+      document.getElementById('perm-name').value = '';
+      document.getElementById('perm-email').value = '';
+      document.getElementById('perm-admin').checked = false;
+      loadPerm();
+    } else showT(d.msg || '添加失败', 'err');
+  }).catch(function(){ showT('请求失败','err'); });
+}
+function delPerm(email) {
+  if (!confirm('确认移除该邮箱的登录权限？移除后该邮箱将无法再登录看板。')) return;
+  fetch('/api/contacts/'+encodeURIComponent(email), {method:'DELETE', headers:{'X-Session':S.token}})
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if (d.ok) { showT('已移除','ok'); loadPerm(); } else showT(d.msg || '移除失败','err'); })
+  .catch(function(){ showT('请求失败','err'); });
+}
+function notifyTest() {
+  showT('正在发送测试邮件...','ok');
+  fetch('/api/notify/test', {method:'POST', headers:{'Content-Type':'application/json','X-Session':S.token}, body:JSON.stringify({})})
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if (d.ok) showT('测试邮件已发送到 '+d.to,'ok'); else showT(d.msg || '发送失败','err'); })
+  .catch(function(){ showT('请求失败','err'); });
+}
+function notifyRun(kind) {
+  var label = kind==='weekly' ? '周报' : 'DDL提醒';
+  var scope = kind==='weekly' ? '全部授权邮箱' : '相关责任人';
+  if (!confirm('确认立即向「'+scope+'」发送'+label+'？')) return;
+  showT('正在发送'+label+'...','ok');
+  fetch('/api/notify/'+kind, {method:'POST', headers:{'X-Session':S.token}})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok && kind==='weekly') showT('周报已发送给 '+d.recipients+' 个邮箱','ok');
+    else if (d.ok) showT('提醒已发送：通知 '+d.notified_people+' 人，成功 '+d.sent+' 封','ok');
+    else showT(d.msg || '发送失败','err');
+  })
+  .catch(function(){ showT('请求失败','err'); });
+}
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
-function closeModal(id){document.getElementById(id).classList.remove('show');}
-document.querySelectorAll('.overlay').forEach(function(el){
-  el.addEventListener('click',function(e){if(e.target===el)el.classList.remove('show');});
-});
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+/* ─── 测试发送周报（选收件人） ─── */
+function openWeeklyTest() {
+  var list = document.getElementById('weekly-test-list');
+  list.innerHTML = '<div style="color:#bbb;font-size:12px;padding:6px">加载中...</div>';
+  document.getElementById('weekly-test-extra').value = '';
+  document.getElementById('weekly-test-modal').className = 'log-modal show';
+  fetch('/api/contacts', {headers:{'X-Session':S.token}})
+  .then(function(r){ return r.json(); })
+  .then(function(arr){
+    if (!arr.length) { list.innerHTML = '<div style="color:#bbb;font-size:12px;padding:6px">授权名单为空</div>'; return; }
+    list.innerHTML = arr.map(function(c){
+      var checked = (c.email||'').toLowerCase() === (S.email||'').toLowerCase() ? ' checked' : '';
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:13px;cursor:pointer">'+
+        '<input type="checkbox" class="wk" value="'+c.email+'"'+checked+' onchange="updateWeeklyTestCount()">'+
+        '<span style="font-weight:600;min-width:80px">'+c.name+'</span>'+
+        '<span style="color:#666">'+c.email+'</span></label>';
+    }).join('');
+    updateWeeklyTestCount();
+  })
+  .catch(function(){ list.innerHTML = '<div style="color:#c62828;font-size:12px;padding:6px">加载失败</div>'; });
+}
+function closeWeeklyTest() { document.getElementById('weekly-test-modal').className = 'log-modal'; }
+function collectWeeklyTestEmails() {
+  var emails = [];
+  document.querySelectorAll('#weekly-test-list input.wk:checked').forEach(function(el){ emails.push(el.value.trim()); });
+  var extra = document.getElementById('weekly-test-extra').value || '';
+  extra.split(/[;,\s]+/).forEach(function(e){ e = e.trim(); if (e && e.indexOf('@') > 0) emails.push(e); });
+  var seen = {}, out = [];
+  emails.forEach(function(e){ var k = e.toLowerCase(); if (!seen[k]) { seen[k] = 1; out.push(e); } });
+  return out;
+}
+function updateWeeklyTestCount() {
+  document.getElementById('weekly-test-count').textContent = collectWeeklyTestEmails().length;
+}
+function sendWeeklyTest() {
+  var to = collectWeeklyTestEmails();
+  if (!to.length) { showT('请至少选择一个或填写一个收件邮箱','err'); return; }
+  showT('正在发送测试周报...','ok');
+  fetch('/api/notify/weekly', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Session':S.token},
+    body: JSON.stringify({to: to})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok) { closeWeeklyTest(); showT('测试周报已发送给 '+d.recipients+' 个邮箱','ok'); }
+    else showT(d.msg || '发送失败','err');
+  })
+  .catch(function(){ showT('请求失败','err'); });
+}
 
-// ─── Start ────────────────────────────────────────────────────────────────────
-init();
+/* ─── Toast & 时钟 ─── */
+function showT(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show '+(type||'');
+  setTimeout(function(){ el.className='toast'; }, 2800);
+}
+function p2(n){ return String(n).padStart(2,'0'); }
+function tick() {
+  var now = new Date();
+  document.getElementById('today').textContent = now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate());
+  var next = new Date(now); next.setHours(20,0,0,0);
+  if (now>=next) next.setDate(next.getDate()+1);
+  document.getElementById('nupd').textContent = next.getFullYear()+'-'+p2(next.getMonth()+1)+'-'+p2(next.getDate())+' 20:00';
+  var diff = next-now;
+  var hh=Math.floor(diff/3600000), mm=Math.floor((diff%3600000)/60000), ss=Math.floor((diff%60000)/1000);
+  document.getElementById('cd').textContent = p2(hh)+':'+p2(mm)+':'+p2(ss);
+}
+
+/* ─── 初始化 ─── */
+document.getElementById('ilemail').onkeydown = function(e){ if(e.key==='Enter') loginStep(); };
+document.getElementById('ilpw').onkeydown    = function(e){ if(e.key==='Enter') loginStep(); };
+document.getElementById('modal').onclick    = function(e){ if(e.target===this) closeM(); };
+document.getElementById('pub-modal').onclick= function(e){ if(e.target===this) closePub(); };
+document.getElementById('batch-modal').onclick=function(e){ if(e.target===this) closeBatch(); };
+document.getElementById('log-modal').onclick= function(e){ if(e.target===this) closeLog(); };
+document.getElementById('perm-modal').onclick=function(e){ if(e.target===this) closePerm(); };
+document.getElementById('weekly-test-modal').onclick=function(e){ if(e.target===this) closeWeeklyTest(); };
+(function(){
+  var btn = document.getElementById('btn-toggle-old');
+  btn.textContent = S.showAllDone ? '⚙ 隐藏旧的已完成事项' : '⚙ 显示全部已完成';
+  btn.classList.toggle('on', S.showAllDone);
+})();
+
+/* 尝试恢复本地保存的登录状态，否则显示登录框（保密要求：不允许游客免登录查看） */
+(function initSession(){
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem('kanban_session')||'null'); } catch(e){}
+  if (saved && saved.token && saved.email) {
+    S = {role:saved.role, name:saved.name, email:saved.email, token:saved.token, showAllDone:S.showAllDone};
+    enter();
+    load();
+  } else {
+    showLogin();
+  }
+})();
+setInterval(load, 30000);
+setInterval(tick, 1000);
+tick();
 </script>
 </body>
 </html>
