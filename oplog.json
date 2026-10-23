@@ -78,5 +78,13 @@
     "item_id": null,
     "item_name": "李素然",
     "detail": "邮箱:suranli@hekongtek.com；角色:责任人"
+  },
+  {
+    "time": "2026-10-23 01:29:28",
+    "operator": "Dandy.chen",
+    "action": "新增权限",
+    "item_id": null,
+    "item_name": "肖媛",
+    "detail": "邮箱:chensiqi@hekongtek.com；角色:责任人"
   }
 ]
