@@ -86,5 +86,13 @@
     "item_id": null,
     "item_name": "肖媛",
     "detail": "邮箱:chensiqi@hekongtek.com；角色:责任人"
+  },
+  {
+    "time": "2026-10-23 01:29:41",
+    "operator": "Dandy.chen",
+    "action": "测试发送周报",
+    "item_id": null,
+    "item_name": null,
+    "detail": "收件1人：xiaodanchen@livoxtech.com；失败:邮件服务未配置（缺少 SENDGRID_API_KEY 或 SMTP 配置）"
   }
 ]
