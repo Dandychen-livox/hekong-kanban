@@ -118,5 +118,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "收件1人：xiaodanchen@livoxtech.com；失败:HTTP 403: {\"errors\":[{\"message\":\"The from address does not match a verified Sender Identity. Mail cannot be sent until this error is resolved. Visit https://sendgrid.com/docs/for-developers/sending-email/sender-identity/ to see the Sender Identity requirements\",\"field\":\"from\",\"help\":null}]}"
+  },
+  {
+    "time": "2026-10-23 01:58:24",
+    "operator": "Dandy.chen",
+    "action": "测试发送周报",
+    "item_id": null,
+    "item_name": null,
+    "detail": "收件2人：xiaodanchen@livoxtech.com,2279528710@qq.com；成功"
   }
 ]
