@@ -62,5 +62,13 @@
     "item_id": null,
     "item_name": "赵玉东",
     "detail": "邮箱:yudongzhao@hekongtek.com；角色:责任人"
+  },
+  {
+    "time": "2026-10-23 01:28:23",
+    "operator": "Dandy.chen",
+    "action": "新增权限",
+    "item_id": null,
+    "item_name": "叶帆",
+    "detail": "邮箱:yefan@hekongtek.com；角色:责任人"
   }
 ]
