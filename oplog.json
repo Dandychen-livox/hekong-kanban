@@ -366,5 +366,13 @@
     "item_id": null,
     "item_name": "叶帆",
     "detail": "邮箱:yefan@hekongtek.com；角色→责任人"
+  },
+  {
+    "time": "2026-11-12 08:13:54",
+    "operator": "Nathan.song",
+    "action": "修改权限",
+    "item_id": null,
+    "item_name": "肖媛",
+    "detail": "邮箱:chensiqi@hekongtek.com；角色→录入员"
   }
 ]
