@@ -187,7 +187,7 @@ def verify_session(token):
         role = 'admin'
         name = (c or {}).get('name') or email.split('@')[0]
     elif c:
-        role = 'person'
+        role = 'editor' if c.get('role') == 'editor' else 'person'
         name = c.get('name') or email.split('@')[0]
     else:
         return None  # 邮箱已被从名单中移除，会话失效
@@ -198,6 +198,22 @@ def require_session(req):
     if not sess:
         abort(401)
     return sess
+
+# ── 权限判断 ──
+def can_add_task(sess):
+    """管理员与“录入员”都可以新增待办"""
+    return bool(sess) and sess.get('role') in ('admin', 'editor')
+
+def can_edit_row(sess, row):
+    """管理员可改全部；录入员只能改自己录入的；普通责任人只能改自己负责的"""
+    if not sess:
+        return False
+    if sess.get('role') == 'admin':
+        return True
+    if sess.get('role') == 'editor':
+        return (row.get('created_by_email') or '').strip().lower() == sess.get('email')
+    persons = [p.strip() for p in re.split(r'[&/、,，]', row.get('person', '')) if p.strip()]
+    return sess.get('name') in persons
 
 # ── 邮件发送 ──
 def mail_configured():
@@ -495,6 +511,12 @@ def api_data():
     require_session(request)
     return jsonify(read_data())
 
+@app.route('/api/me')
+def api_me():
+    """返回当前登录者的最新身份/角色（角色以通讯录为准，管理员改角色后刷新即可生效）"""
+    sess = require_session(request)
+    return jsonify({'ok': True, 'email': sess['email'], 'name': sess['name'], 'role': sess['role']})
+
 @app.route('/api/auth', methods=['POST'])
 def api_auth():
     """邮箱登录：
@@ -520,8 +542,9 @@ def api_auth():
         add_log(name, '登录', detail=email + '（管理员）')
         return jsonify({'ok': True, 'role': 'admin', 'name': name, 'token': token})
     token = make_session(email)
-    add_log(name, '登录', detail=email)
-    return jsonify({'ok': True, 'role': 'person', 'name': name, 'token': token})
+    role = 'editor' if (contact or {}).get('role') == 'editor' else 'person'
+    add_log(name, '登录', detail=email + ('（录入员）' if role == 'editor' else ''))
+    return jsonify({'ok': True, 'role': role, 'name': name, 'token': token})
 
 @app.route('/api/log')
 def api_log():
@@ -541,7 +564,7 @@ def api_contacts_add():
     body  = request.get_json(force=True) or {}
     email = (body.get('email') or '').strip().lower()
     name  = (body.get('name') or '').strip()
-    role  = body.get('role') if body.get('role') in ('admin', 'person') else 'person'
+    role  = body.get('role') if body.get('role') in ('admin', 'editor', 'person') else 'person'
     if not email or not name:
         return jsonify({'ok': False, 'msg': '姓名和邮箱不能为空'}), 400
     with _lock:
@@ -550,7 +573,34 @@ def api_contacts_add():
             return jsonify({'ok': False, 'msg': '该邮箱已存在'}), 400
         contacts.append({'name': name, 'email': email, 'role': role})
         write_contacts(contacts)
-    add_log(get_caller(request), '新增权限', None, name, f'邮箱:{email}；角色:{"管理员" if role=="admin" else "责任人"}')
+    role_cn = {'admin': '管理员', 'editor': '录入员', 'person': '责任人'}.get(role, '责任人')
+    add_log(get_caller(request), '新增权限', None, name, f'邮箱:{email}；角色:{role_cn}')
+    return jsonify({'ok': True})
+
+@app.route('/api/contacts/role', methods=['POST'])
+def api_contacts_role():
+    """管理员调整某个邮箱的角色（责任人 / 录入员 / 管理员）"""
+    if not is_admin(request): abort(403)
+    body  = request.get_json(force=True) or {}
+    email = (body.get('email') or '').strip().lower()
+    role  = body.get('role')
+    if role not in ('admin', 'editor', 'person'):
+        return jsonify({'ok': False, 'msg': '角色不合法'}), 400
+    if email in FALLBACK_ADMIN_EMAILS:
+        return jsonify({'ok': False, 'msg': '该邮箱为系统兜底管理员，角色不可修改'}), 400
+    with _lock:
+        contacts = read_contacts()
+        found = None
+        for c in contacts:
+            if (c.get('email') or '').strip().lower() == email:
+                c['role'] = role
+                found = c
+                break
+        if not found:
+            return jsonify({'ok': False, 'msg': '该邮箱不在名单中'}), 404
+        write_contacts(contacts)
+    role_cn = {'admin': '管理员', 'editor': '录入员', 'person': '责任人'}.get(role, role)
+    add_log(get_caller(request), '修改权限', None, found.get('name'), f'邮箱:{email}；角色→{role_cn}')
     return jsonify({'ok': True})
 
 @app.route('/api/contacts/<path:email>', methods=['DELETE'])
@@ -763,6 +813,8 @@ def api_public_update(row_id):
         idx  = next((i for i, r in enumerate(rows) if str(r.get('id')) == str(row_id)), None)
         if idx is None: abort(404)
         row = rows[idx]
+        if sess['role'] == 'editor' and (row.get('created_by_email') or '').strip().lower() != sess['email']:
+            abort(403)   # 录入员只能填写/修改自己录入的待办
         row.update(allowed)
         row['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M')
         row['updated_by'] = caller
@@ -783,6 +835,7 @@ def api_public_update(row_id):
 def api_update(row_id):
     sess   = require_session(request)
     admin  = sess['role'] == 'admin'
+    editor = sess['role'] == 'editor'
     caller = sess['name']
     body   = request.get_json(force=True) or {}
     with _lock:
@@ -790,10 +843,16 @@ def api_update(row_id):
         idx  = next((i for i, r in enumerate(rows) if str(r.get('id')) == str(row_id)), None)
         if idx is None: abort(404)
         row = rows[idx]
+        if not can_edit_row(sess, row): abort(403)
         if not admin:
-            ps = [p.strip() for p in re.split(r'[&/、,，]', row.get('person', '')) if p.strip()]
-            if caller not in ps: abort(403)
-            body = {k: v for k, v in body.items() if k in ('progress', 'status', 'livox_confirm', 'priority')}
+            if editor:
+                # 录入员可编辑自己录入事项的常规字段，但不含 Livox 确认（那是管理员职责）
+                allow = ('item', 'submit', 'ddl', 'initiator', 'person', 'livox',
+                         'priority', 'recurring', 'recur_type', 'recur_value', 'recur_note',
+                         'progress', 'submit_url', 'status')
+            else:
+                allow = ('progress', 'status', 'priority')
+            body = {k: v for k, v in body.items() if k in allow}
         if 'priority' in body: body['priority'] = norm_priority(body['priority'])
         if 'recurring' in body: body['recurring'] = norm_bool(body['recurring'])
         row.update(body)
@@ -814,8 +873,9 @@ def api_update(row_id):
 
 @app.route('/api/add', methods=['POST'])
 def api_add():
-    if not is_admin(request): abort(403)
-    caller = get_caller(request)
+    sess = require_session(request)
+    if not can_add_task(sess): abort(403)
+    caller = sess['name']
     body = request.get_json(force=True) or {}
     with _lock:
         rows   = read_data()
@@ -840,6 +900,8 @@ def api_add():
             'livox_confirm':'未完成',
             'completed_at': '',
             'status_done_at': '',
+            'created_by_email': sess['email'],
+            'created_by':   caller,
             'updated_at':   datetime.now().strftime('%Y-%m-%d %H:%M'),
             'updated_by':   caller
         }
@@ -1011,7 +1073,7 @@ def api_export():
 
 @app.route('/api/template')
 def api_template():
-    if not is_admin(request): abort(403)
+    if not can_add_task(require_session(request)): abort(403)
     if TEMPLATE_FILE.exists():
         return send_file(str(TEMPLATE_FILE), as_attachment=True,
                          download_name='事项明细模板.xlsx',
@@ -1037,7 +1099,7 @@ def api_template():
 
 @app.route('/api/batch_add', methods=['POST'])
 def api_batch_add():
-    if not is_admin(request): abort(403)
+    if not can_add_task(require_session(request)): abort(403)
     parse_only = request.headers.get('X-Parse-Only', '') == '1'
     if request.content_type and 'application/json' in request.content_type:
         body = request.get_json(force=True) or {}
@@ -1100,7 +1162,8 @@ def _parse_excel(stream):
 
 def _do_batch(items):
     if not items: return jsonify({'ok': False, 'msg': '没有可导入的数据'})
-    caller = get_caller(request)
+    sess = require_session(request)
+    caller = sess['name']
     added = []
     with _lock:
         rows   = read_data()
@@ -1122,6 +1185,8 @@ def _do_batch(items):
                 'livox_confirm': '未完成',
                 'completed_at': '',
                 'status_done_at': status=='完成' and datetime.now().strftime('%Y-%m-%d %H:%M') or '',
+                'created_by_email': sess['email'],
+                'created_by': caller,
                 'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M'),
                 'updated_by': caller + '(批量导入)',
             }
