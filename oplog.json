@@ -358,5 +358,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "songzhiyu@livoxtech.com（管理员）"
+  },
+  {
+    "time": "2026-11-12 08:13:51",
+    "operator": "Nathan.song",
+    "action": "修改权限",
+    "item_id": null,
+    "item_name": "叶帆",
+    "detail": "邮箱:yefan@hekongtek.com；角色→责任人"
   }
 ]
