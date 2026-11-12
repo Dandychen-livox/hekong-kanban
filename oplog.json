@@ -382,5 +382,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "发送至songzhiyu@livoxtech.com：成功"
+  },
+  {
+    "time": "2026-11-12 17:15:50",
+    "operator": "系统",
+    "action": "发送DDL提醒",
+    "item_id": null,
+    "item_name": null,
+    "detail": "通知0人，成功0"
   }
 ]
