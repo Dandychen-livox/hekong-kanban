@@ -430,5 +430,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "通知1人，成功1"
+  },
+  {
+    "time": "2026-11-13 17:18:47",
+    "operator": "系统",
+    "action": "发送周报",
+    "item_id": null,
+    "item_name": null,
+    "detail": "收件12人：xiaodanchen@livoxtech.com,songzhiyu@livoxtech.com,Jessica.li@livoxtech.com,karson.chen@livoxtech.com,wei.ma@livoxtech.com,kerwin.wang@livoxtech.com,yudongzhao@hekongtek.com,yefan@hekongtek.com,suranli@hekongtek.com,chensiqi@hekongtek.com,yu.cui@hekongtek.com,mengyong@hekongtek.com；成功"
   }
 ]
