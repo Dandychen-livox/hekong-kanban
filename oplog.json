@@ -398,5 +398,13 @@
     "item_id": 10,
     "item_name": "Mid-360S大项目价格诉求",
     "detail": ""
+  },
+  {
+    "time": "2026-11-13 04:23:15",
+    "operator": "Dandy.chen",
+    "action": "新增事项",
+    "item_id": 11,
+    "item_name": "备料策略变化说明",
+    "detail": ""
   }
 ]
