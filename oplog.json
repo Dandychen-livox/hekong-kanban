@@ -390,5 +390,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "通知0人，成功0"
+  },
+  {
+    "time": "2026-11-13 04:21:41",
+    "operator": "Dandy.chen",
+    "action": "新增事项",
+    "item_id": 10,
+    "item_name": "Mid-360S大项目价格诉求",
+    "detail": ""
   }
 ]
