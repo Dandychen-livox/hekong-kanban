@@ -182,5 +182,30 @@
     "status_done_at": "",
     "updated_at": "2026-11-11 01:39",
     "updated_by": "Dandy.chen"
+  },
+  {
+    "id": 10,
+    "date": "2026-11-13",
+    "item": "Mid-360S大项目价格诉求",
+    "submit": "1.竞品：不同阶梯的报价以及相关策略\n2.对于Mid-360S大项目价格的诉求",
+    "ddl": "2026-11-19",
+    "initiator": "Dandy",
+    "person": "赵玉东",
+    "livox": "Dandy",
+    "priority": "高",
+    "recurring": false,
+    "recur_type": "",
+    "recur_value": "",
+    "recur_note": "",
+    "progress": "",
+    "submit_url": "",
+    "status": "未完成",
+    "livox_confirm": "未完成",
+    "completed_at": "",
+    "status_done_at": "",
+    "created_by_email": "xiaodanchen@livoxtech.com",
+    "created_by": "Dandy.chen",
+    "updated_at": "2026-11-13 04:21",
+    "updated_by": "Dandy.chen"
   }
 ]
