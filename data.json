@@ -257,5 +257,30 @@
     "created_by": "Dandy.chen",
     "updated_at": "2026-11-13 04:25",
     "updated_by": "Dandy.chen"
+  },
+  {
+    "id": 13,
+    "date": "2026-11-16",
+    "item": "Avia2定制开发诉求",
+    "submit": "提供Avia2 FOV45°截止量程增加固件",
+    "ddl": "2026-11-30",
+    "initiator": "崔宇",
+    "person": "马伟",
+    "livox": "马伟",
+    "priority": "高",
+    "recurring": false,
+    "recur_type": "",
+    "recur_value": "",
+    "recur_note": "",
+    "progress": "",
+    "submit_url": "",
+    "status": "未完成",
+    "livox_confirm": "未完成",
+    "completed_at": "",
+    "status_done_at": "",
+    "created_by_email": "chensiqi@hekongtek.com",
+    "created_by": "肖媛",
+    "updated_at": "2026-11-16 09:10",
+    "updated_by": "肖媛"
   }
 ]
