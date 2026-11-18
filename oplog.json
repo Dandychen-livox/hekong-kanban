@@ -478,5 +478,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "通知2人，成功2"
+  },
+  {
+    "time": "2026-11-18 09:35:56",
+    "operator": "赵玉东",
+    "action": "登录",
+    "item_id": null,
+    "item_name": null,
+    "detail": "yudongzhao@hekongtek.com"
   }
 ]
