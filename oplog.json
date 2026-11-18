@@ -574,5 +574,13 @@
     "item_id": 14,
     "item_name": "【重要】JT128AR96竞品内容更新",
     "detail": "进展:；状态→未完成；Livox确认→未完成；责任人→叶帆、赵玉东；优先级→高"
+  },
+  {
+    "time": "2026-11-18 13:32:01",
+    "operator": "Nathan.song",
+    "action": "新增事项",
+    "item_id": 16,
+    "item_name": "Avia2测试报告15篇",
+    "detail": ""
   }
 ]
