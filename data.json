@@ -282,5 +282,30 @@
     "created_by": "肖媛",
     "updated_at": "2026-11-16 09:10",
     "updated_by": "肖媛"
+  },
+  {
+    "id": 14,
+    "date": "2026-11-18",
+    "item": "【重要】JT128AR96竞品内容更新",
+    "submit": "",
+    "ddl": "2026-11-27",
+    "initiator": "Nathan",
+    "person": "叶帆",
+    "livox": "Nathan",
+    "priority": "高",
+    "recurring": false,
+    "recur_type": "",
+    "recur_value": "",
+    "recur_note": "",
+    "progress": "",
+    "submit_url": "",
+    "status": "未完成",
+    "livox_confirm": "未完成",
+    "completed_at": "",
+    "status_done_at": "",
+    "created_by_email": "songzhiyu@livoxtech.com",
+    "created_by": "Nathan.song",
+    "updated_at": "2026-11-18 13:23",
+    "updated_by": "Nathan.song"
   }
 ]
