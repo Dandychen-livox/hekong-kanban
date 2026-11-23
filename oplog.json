@@ -654,5 +654,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "yefan@hekongtek.com"
+  },
+  {
+    "time": "2026-11-23 20:43:50",
+    "operator": "系统",
+    "action": "发送DDL提醒",
+    "item_id": null,
+    "item_name": null,
+    "detail": "通知0人，成功0"
   }
 ]
