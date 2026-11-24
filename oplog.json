@@ -670,5 +670,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "chensiqi@hekongtek.com（录入员）"
+  },
+  {
+    "time": "2026-11-24 19:49:16",
+    "operator": "系统",
+    "action": "发送DDL提醒",
+    "item_id": null,
+    "item_name": null,
+    "detail": "通知0人，成功0"
   }
 ]
