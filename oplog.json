@@ -678,5 +678,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "通知0人，成功0"
+  },
+  {
+    "time": "2026-11-25 07:04:45",
+    "operator": "Nathan.song",
+    "action": "新增事项",
+    "item_id": 17,
+    "item_name": "汇总26年市场资料（行业洞察分析、展会复",
+    "detail": ""
   }
 ]
