@@ -382,5 +382,30 @@
     "created_by": "Nathan.song",
     "updated_at": "2026-11-25 07:04",
     "updated_by": "Nathan.song"
+  },
+  {
+    "id": 18,
+    "date": "2026-11-25",
+    "item": "按照标准行业更新23-26年10月全量出货数据（全量更新）",
+    "submit": "",
+    "ddl": "2026-11-27",
+    "initiator": "Nathan",
+    "person": "肖媛",
+    "livox": "Nathan",
+    "priority": "高",
+    "recurring": false,
+    "recur_type": "",
+    "recur_value": "",
+    "recur_note": "",
+    "progress": "",
+    "submit_url": "",
+    "status": "未完成",
+    "livox_confirm": "未完成",
+    "completed_at": "",
+    "status_done_at": "",
+    "created_by_email": "songzhiyu@livoxtech.com",
+    "created_by": "Nathan.song",
+    "updated_at": "2026-11-25 07:05",
+    "updated_by": "Nathan.song"
   }
 ]
