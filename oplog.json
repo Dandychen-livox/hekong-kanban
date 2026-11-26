@@ -710,5 +710,13 @@
     "item_id": null,
     "item_name": null,
     "detail": "suranli@hekongtek.com"
+  },
+  {
+    "time": "2026-11-26 18:43:47",
+    "operator": "系统",
+    "action": "发送DDL提醒",
+    "item_id": null,
+    "item_name": null,
+    "detail": "通知0人，成功0"
   }
 ]
