@@ -397,15 +397,15 @@
     "recur_type": "",
     "recur_value": "",
     "recur_note": "",
-    "progress": "",
+    "progress": "已通过微信提供",
     "submit_url": "",
-    "status": "未完成",
+    "status": "完成",
     "livox_confirm": "未完成",
     "completed_at": "",
-    "status_done_at": "",
+    "status_done_at": "2026-11-27 01:13",
     "created_by_email": "songzhiyu@livoxtech.com",
     "created_by": "Nathan.song",
-    "updated_at": "2026-11-25 07:05",
-    "updated_by": "Nathan.song"
+    "updated_at": "2026-11-27 01:13",
+    "updated_by": "叶帆"
   }
 ]
